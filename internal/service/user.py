@@ -57,8 +57,10 @@ class UserService:
 
     async def send_code(self, gmail):
         try:
+            is_code_sended = await self.redis_repo.get_verify_code(gmail)
+            if is_code_sended:
+                return {"status": "ok", "message": "сode already sent"}
             redis_code = await self.redis_repo.gen_code(gmail)
-            logger.info(redis_code)
             mail.send_verification_email.delay(gmail, redis_code)
         except Exception as e:
             logger.error(f'"send_code error": {e}')
