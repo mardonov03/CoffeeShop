@@ -31,7 +31,7 @@ async def init_db(pool):
             await conn.execute("""DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'roles') THEN
-                        CREATE TYPE roles AS ENUM ('admin', 'user');
+                        CREATE TYPE roles AS ENUM ('admin', 'user', 'creator');
                     END IF;
                 END$$;
                 """)
@@ -48,13 +48,13 @@ async def init_db(pool):
             """)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_status (
-                    userid BIGINT REFERENCES users(userid) ON DELETE CASCADE,
+                    userid BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
                     is_verified BOOLEAN DEFAULT FALSE
                 );
             """)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_tokens (
-                    token_id BIGSERIAL PRIMARY KEY,
+                    tokenid BIGSERIAL PRIMARY KEY,
                     userid BIGINT REFERENCES users(userid) ON DELETE CASCADE,
                     refresh_token TEXT UNIQUE,
                     created_at TIMESTAMP DEFAULT now(),

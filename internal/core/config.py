@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     DB_PORT: int
     SECRET_KEY: str
     ALGORITHM: str
+    REDIS_HOST: str
+    REDIS_PORT: int
     class Config:
         env_file = ".env"
 
