@@ -17,7 +17,7 @@ class VerifyGmail(BaseModel):
     code: constr(min_length=6)
     gmail: Optional[EmailStr] = None
 
-class UserOut(BaseModel):
+class UserInfo(BaseModel):
     userid: int
     username: str
     gmail: EmailStr

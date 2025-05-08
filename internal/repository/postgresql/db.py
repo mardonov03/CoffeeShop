@@ -31,7 +31,7 @@ async def init_db(pool):
             await conn.execute("""DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'roles') THEN
-                        CREATE TYPE roles AS ENUM ('admin', 'user', 'creator');
+                        CREATE TYPE roles AS ENUM ('admin', 'user', 'superadmin');
                     END IF;
                 END$$;
                 """)

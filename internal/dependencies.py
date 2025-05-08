@@ -7,7 +7,7 @@ from fastapi import Depends, Request
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 def get_user_service(request: Request) -> UserService:
-    return UserService(request.app.state.pool)
+    return UserService(request.app.state.pool, request.app.state.redis_pool)
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
     if token is None:

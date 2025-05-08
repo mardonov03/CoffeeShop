@@ -6,10 +6,12 @@ import bcrypt
 from datetime import datetime
 from internal.core.logging import logger
 import uuid
+from internal.repository.redis.user import RedisUserRepository
 
 class UserService:
-    def __init__(self, pool):
+    def __init__(self, pool, redis_pool):
         self.repo = UserRepository(pool)
+        self.redis = RedisUserRepository(redis_pool)
 
     async def get_user_count(self):
         return await self.repo.get_user_count()
@@ -21,36 +23,26 @@ class UserService:
         try:
             user_data = await self.repo.get_user_data(user.gmail)
             if not user_data:
-                pass
-            user_gmail = user_data['user_gmail']
-            logger.info(f"Checking registration conditions for {user.gmail}")
+                return {"message": "User not found."}
 
-            if user_gmail and user_gmail['account_status']:
+            # Уточнение условий
+            if user_data['gmail'] and user_data['account_status']:
                 raise HTTPException(status_code=409, detail='Gmail already registered.')
 
             if user_data['username']:
                 raise HTTPException(status_code=408, detail='Username already taken.')
 
-            if user_gmail and not user_gmail['account_status'] and not user_gmail['statuscode']:
-                last_sent = user_gmail['time_for_verificy_code']
-                if (datetime.now() - last_sent).total_seconds() < 60:
-                    raise HTTPException(status_code=429, detail='Retry after 60s.')
+            if user_data.get('statuscode') and not tokenuser:
+                raise HTTPException(status_code=400, detail="Finish setup on verified device.")
 
-            if user_gmail and user_gmail['statuscode'] and tokenuser is None:
-                raise HTTPException(status_code=400, detail='Finish setup on verified device.')
-
-            if tokenuser and tokenuser.get('sub') == user.gmail:
-                hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-                count = await self.repo.get_active_user_count()
-                role = self._get_role(user.gmail, count)
-                await self.repo.finalize_registration(user.username, hashed_pw, user.gmail, role)
-                logger.info(f"User created: {user.username}, role: {role}")
-                token = await create_jwt_token(user.username)
-                return {'token_access': token, 'gmail': user.gmail}
-
-            await self.repo.send_verification_email(user.gmail)
-            logger.info(f"Verification code sent to {user.gmail}")
-            return f'Код подтверждения отправлен на: {user.gmail}'
+            # Продолжение регистрации
+            hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
+            count = await self.repo.get_active_user_count()
+            role = self._get_role(user.gmail, count)
+            await self.repo.finalize_registration(user.username, hashed_pw, user.gmail, role)
+            logger.info(f"User created: {user.username}, role: {role}")
+            token = await create_jwt_token(user.username)
+            return {'token_access': token, 'gmail': user.gmail}
 
         except HTTPException:
             raise
@@ -63,8 +55,14 @@ class UserService:
             return 'admin'
         return 'superadmin' if user_count == 0 else 'user'
 
-    async def send_code(gmail):
+    async def send_code(self, gmail):
         try:
-            pass
+            redis_code = await self.repo.redis.user.get_verify_code(gmail)
+            if redis_code:
+                await self.repo.send_verification_email(gmail, redis_code)
+                return {"status": "success", "message": "Verification code sent successfully."}
+            else:
+                raise HTTPException(status_code=404, detail="Verification code not found.")
         except Exception as e:
             logger.error(f'"send_code error": {e}')
+            raise HTTPException(status_code=500, detail="Error sending verification code.")
