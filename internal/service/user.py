@@ -10,18 +10,18 @@ from internal.repository.redis.user import RedisUserRepository
 
 class UserService:
     def __init__(self, pool, redis_pool):
-        self.repo = UserRepository(pool)
-        self.redis = RedisUserRepository(redis_pool)
+        self.psql_repo = UserRepository(pool)
+        self.redis_repo = RedisUserRepository(redis_pool)
 
     async def get_user_count(self):
-        return await self.repo.get_user_count()
+        return await self.psql_repo.get_user_count()
 
     async def get_me(self, username):
-        return await self.repo.get_user_data(username)
+        return await self.psql_repo.get_user_data(username)
 
     async def sign_up(self, user: model.UserCreate, tokenuser: dict):
         try:
-            user_data = await self.repo.get_user_data(user.gmail)
+            user_data = await self.psql_repo.get_user_data(user.gmail)
             if not user_data:
                 return {"message": "User not found."}
 
@@ -37,9 +37,9 @@ class UserService:
 
             # Продолжение регистрации
             hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-            count = await self.repo.get_active_user_count()
+            count = await self.psql_repo.get_active_user_count()
             role = self._get_role(user.gmail, count)
-            await self.repo.finalize_registration(user.username, hashed_pw, user.gmail, role)
+            await self.psql_repo.finalize_registration(user.username, hashed_pw, user.gmail, role)
             logger.info(f"User created: {user.username}, role: {role}")
             token = await create_jwt_token(user.username)
             return {'token_access': token, 'gmail': user.gmail}
@@ -51,15 +51,15 @@ class UserService:
             raise HTTPException(status_code=500, detail='Registration error.')
 
     def _get_role(self, gmail: str, user_count: int) -> str:
-        if gmail in self.repo.admin_emails:
+        if gmail in self.psql_repo.admin_emails:
             return 'admin'
         return 'superadmin' if user_count == 0 else 'user'
 
     async def send_code(self, gmail):
         try:
-            redis_code = await self.repo.redis.user.get_verify_code(gmail)
+            redis_code = await self.redis_repo.redis.user.get_verify_code(gmail)
             if redis_code:
-                await self.repo.send_verification_email(gmail, redis_code)
+                await self.redis_repo.redis.send_verification_email(gmail, redis_code)
                 return {"status": "success", "message": "Verification code sent successfully."}
             else:
                 raise HTTPException(status_code=404, detail="Verification code not found.")
