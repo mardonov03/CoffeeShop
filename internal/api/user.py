@@ -12,11 +12,13 @@ async def get_user_count(service: UserService = Depends(dependencies.get_user_se
 
 @router.get("/me")
 async def get_me(service: UserService = Depends(dependencies.get_user_service), current_user: dict = Depends(dependencies.get_current_user)):
+    if not current_user:
+        return {"status": "ok", "message": "please sign in"}
     return await service.get_me(current_user["username"])
 
 @router.post('/signup')
-async def sign_up(user: model.UserCreate, service: UserService = Depends(dependencies.get_user_service)):
-    return await service.sign_up(user)
+async def sign_up(user: model.UserCreate, service: UserService = Depends(dependencies.get_user_service), tokenuser: dict = Depends(dependencies.get_current_user)):
+    return await service.sign_up(user, tokenuser)
 
 @router.post('/verify-email')
 async def verify_email(code: model.VerifyGmail, service: UserService = Depends(dependencies.get_user_service)):

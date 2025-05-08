@@ -6,6 +6,7 @@ from internal.repository.redis import db as redis_db
 
 app = FastAPI()
 app.include_router(user.router, prefix="/users", tags=["Users"])
+
 @app.on_event('startup')
 async def eventstart():
     try:

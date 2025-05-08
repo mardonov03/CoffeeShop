@@ -1,15 +1,22 @@
 from internal.core.logging import logger
-import json
+import uuid
+import bcrypt
 
 class RedisUserRepository:
     def __init__(self, redis):
         self.redis = redis
 
-    async def set_verify_code(self, gmail: str, code: str, expire: int = 300):
+    async def gen_code(self, gmail: str, expire: int = 300):
         try:
-            await self.redis.set(f"verify:{gmail}", code, ex=expire)
+            code = str(uuid.uuid4())[:8]
+            hashcode = bcrypt.hashpw(code.encode('utf-8'), bcrypt.gensalt(rounds=12))
+
+            await self.redis.set(f"verify:{gmail}", hashcode, ex=expire)
+
+            return code
         except Exception as e:
-            logger.error(f'"redis set_verify_code error": {e}')
+            logger.error(f'"redis gen_code error": {e}')
+            return None
 
     async def get_verify_code(self, gmail: str):
         try:

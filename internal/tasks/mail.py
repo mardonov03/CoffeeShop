@@ -4,6 +4,7 @@ from internal.core.logging import logger
 from celery import Celery
 from fastapi_mail import ConnectionConfig
 import asyncio
+
 celery = Celery("tasks", broker=f"redis://{config.settings.REDIS_HOST}:{config.settings.REDIS_PORT}")
 
 conf = ConnectionConfig(

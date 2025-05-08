@@ -5,8 +5,8 @@ from fastapi import HTTPException
 import bcrypt
 from datetime import datetime
 from internal.core.logging import logger
-import uuid
 from internal.repository.redis.user import RedisUserRepository
+from internal.tasks import mail
 
 class UserService:
     def __init__(self, pool, redis_pool):
@@ -23,9 +23,9 @@ class UserService:
         try:
             user_data = await self.psql_repo.get_user_data(user.gmail)
             if not user_data:
-                return {"message": "User not found."}
+                await self.send_code(user.gmail)
+                return {"status": "ok", "message": "verification code sent to email"}
 
-            # Уточнение условий
             if user_data['gmail'] and user_data['account_status']:
                 raise HTTPException(status_code=409, detail='Gmail already registered.')
 
@@ -57,12 +57,9 @@ class UserService:
 
     async def send_code(self, gmail):
         try:
-            redis_code = await self.redis_repo.redis.user.get_verify_code(gmail)
-            if redis_code:
-                await self.redis_repo.redis.send_verification_email(gmail, redis_code)
-                return {"status": "success", "message": "Verification code sent successfully."}
-            else:
-                raise HTTPException(status_code=404, detail="Verification code not found.")
+            redis_code = await self.redis_repo.gen_code(gmail)
+            logger.info(redis_code)
+            mail.send_verification_email.delay(gmail, redis_code)
         except Exception as e:
             logger.error(f'"send_code error": {e}')
-            raise HTTPException(status_code=500, detail="Error sending verification code.")
+            raise HTTPException(status_code=500, detail="error sending verification code")

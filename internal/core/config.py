@@ -10,6 +10,14 @@ class Settings(BaseSettings):
     ALGORITHM: str
     REDIS_HOST: str
     REDIS_PORT: int
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: str
+    MAIL_SERVER: str
+    MAIL_STARTTLS: bool
+    MAIL_SSL_TLS: bool
+    USE_CREDENTIALS: bool
     class Config:
         env_file = ".env"
 
