@@ -1,0 +1,21 @@
+from fastapi import FastAPI
+from internal.repository.postgresql import db
+from internal.core.logging import logger
+from internal.api import user
+
+app = FastAPI()
+app.include_router(user.router, prefix="/users", tags=["Users"])
+@app.on_event('startup')
+async def eventstart():
+    try:
+        app.state.pool = await db.create_pool()
+        await db.init_db(app.state.pool)
+    except Exception as e:
+        logger.error(f'"eventstart error": {e}')
+
+@app.on_event('shutdown')
+async def shutdownevent():
+    try:
+        await app.state.pool.close()
+    except Exception as e:
+        logger.error(f'"shutdownevent error": {e}')
