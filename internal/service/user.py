@@ -81,10 +81,13 @@ class UserService:
             logger.error(f'[get_user_data_from_id error]: {e}')
             return {"status": 'error'}
 
-
     async def sign_up(self, user: model.UserCreate):
         try:
             user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
+
+            if await self.redis_repo.is_verify_blocked(user.gmail):
+                raise HTTPException(status_code=429, detail="Verification already sent. Try again later.")
+
             if not user_data:
 
                 count = await self.psql_repo.get_user_count()
@@ -97,12 +100,14 @@ class UserService:
                 await self.psql_repo.register_user(user, role)
 
                 info = await self.send_verify_url(user.gmail)
+                await self.redis_repo.set_verify_block(user.gmail)
                 return info
 
             elif user_data.userid:
                 is_verified = await self.psql_repo.get_user_status(user_data.userid)
                 if not is_verified:
                     info = await self.send_verify_url(user.gmail)
+                    await self.redis_repo.set_verify_block(user.gmail)
                     return info
                 else:
                     raise HTTPException(status_code=409, detail="Gmail already verified and registered.")

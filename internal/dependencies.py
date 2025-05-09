@@ -1,16 +1,18 @@
 from internal.service.user import UserService
+from internal.service.menu import MenuService
 from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 from internal.core import security
 from fastapi import Depends, Request
 from internal.core.logging import logger
-import datetime
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 def get_user_service(request: Request) -> UserService:
     return UserService(request.app.state.pool, request.app.state.redis_pool)
+
+def get_menu_service(request: Request) -> MenuService:
+    return MenuService(request.app.state.pool, request.app.state.redis_pool)
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
     try:
