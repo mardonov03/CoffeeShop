@@ -9,7 +9,7 @@ async def create_jwt_token(gmail: str, token_type: str) -> Optional[str]:
         if token_type == 'access':
             expiration = datetime.utcnow() + timedelta(minutes=config.settings.JWT_ACCESS_EXPIRE_MINUTES)
         elif token_type == 'refresh':
-            expiration = datetime.utcnow() + timedelta(days=config.settings.JWT_REFRESH_EXPIRE_DAYS)
+            expiration = datetime.utcnow() + timedelta(days=config.settings.JWT_ACCESS_EXPIRE_MINUTES)
         else:
             raise ValueError("Invalid token type")
 

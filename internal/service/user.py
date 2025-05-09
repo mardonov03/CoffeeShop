@@ -7,7 +7,7 @@ from internal.core.logging import logger
 from internal.repository.redis.user import RedisUserRepository
 from internal.tasks import mail
 from internal.core import config
-
+from datetime import datetime, timedelta
 
 class UserService:
     def __init__(self, pool, redis_pool):
@@ -105,8 +105,25 @@ class UserService:
             logger.error(f'[singn_in error]: {e}')
             return {"status": "error", "message": 'server error, please try again'}
 
-    async def update_access_token(self, token: str):
+    async def refresh_access_token(self, refresh_token: str):
         try:
-            pass
+            payload = await security.decode_jwt_verify(refresh_token)
+            if not payload:
+                raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+            gmail = payload.get("sub")
+            db_token = await self.psql_repo.get_refresh_token(gmail)
+
+            if db_token != refresh_token:
+                raise HTTPException(status_code=404, detail="Server error please sign in again")
+
+            access_token = await security.create_jwt_token(gmail, 'access')
+            refresh_token = await security.create_jwt_token(gmail, 'refresh')
+            exp = datetime.utcnow() + timedelta(minutes=config.settings.JWT_ACCESS_EXPIRE_MINUTES)
+
+            await self.psql_repo.add_refresh_token(refresh_token, gmail)
+
+            return {"status": 'ok', "access_token": access_token, "refresh_token": refresh_token, "exp": exp}
         except Exception as e:
-            logger.error(f'[update_access_token error]: {e}')
+            logger.error(f'[refresh_access_token error]: {e}')
+            return {"status": 'error'}
