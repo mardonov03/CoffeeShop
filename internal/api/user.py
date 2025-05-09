@@ -20,5 +20,5 @@ async def verify_gmail(token: str, service: UserService = Depends(dependencies.g
     return await service.verify_gmail(token)
 
 @router.post('/signin')
-async def sign_in(user: model.UserLogin, service: UserService = Depends(dependencies.get_user_service)):
-    pass
+async def sign_in(user: model.UserSignIn, service: UserService = Depends(dependencies.get_user_service)):
+    return await service.singn_in(user)

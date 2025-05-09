@@ -18,7 +18,13 @@ class UserService:
         return await self.psql_repo.get_user_count()
 
     async def get_me(self, gmail):
-        return await self.psql_repo.get_user_data_from_gmail(gmail)
+        try:
+            data = await self.psql_repo.get_user_data_from_gmail(gmail)
+            if data:
+                return {"status": 'ok', "user_data": data}
+        except Exception as e:
+            logger.error(f'[get_me error]: {e}')
+            return {"status": 'error'}
 
     async def sign_up(self, user: model.UserCreate):
         try:
@@ -37,8 +43,8 @@ class UserService:
                 info = await self.send_verify_url(user.gmail)
                 return info
 
-            elif user_data['userid']:
-                is_verified = await self.psql_repo.get_user_status(user_data['userid'])
+            elif user_data.userid:
+                is_verified = await self.psql_repo.get_user_status(user_data.userid)
                 if not is_verified:
                     info = await self.send_verify_url(user.gmail)
                     return info
@@ -73,7 +79,7 @@ class UserService:
                 raise HTTPException(status_code=404, detail="User not found")
 
             if user.account_status:
-                return {"status": "ok", "message": "Email already verified"}
+                return {"status": "no", "message": "Email already verified"}
 
             await self.psql_repo.verify_user(model.VerifyGmail(gmail=gmail))
 
@@ -85,16 +91,19 @@ class UserService:
             logger.error(f"[verify_gmail error] {e}")
             raise HTTPException(status_code=500, detail="Internal error")
 
-    async def singn_in(self, user: model.UserLogin):
+    async def singn_in(self, user: model.UserSignIn):
         try:
             user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
-            if user_data and bcrypt.checkpw(user.password.encode('utf-8'), user_data['password'].encode('utf-8')):
+            if user_data and bcrypt.checkpw(user.password.encode('utf-8'), user_data.password.encode('utf-8')):
                 access_token = await security.create_jwt_token(user.gmail, 'access')
                 refresh_token = await security.create_jwt_token(user.gmail, 'refresh')
-                await self.psql_repo.add_refresh_token(refresh_token, user.userid)
+                await self.psql_repo.add_refresh_token(refresh_token, user.gmail)
                 return {"status": "ok", "access_token": access_token}
+            else:
+                return {"status": 'ok', "message": 'there is no such account'}
         except Exception as e:
             logger.error(f'[singn_in error]: {e}')
+            return {"status": "error", "message": 'server error, please try again'}
 
     async def update_access_token(self, token: str):
         try:

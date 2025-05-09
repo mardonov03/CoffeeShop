@@ -14,6 +14,7 @@ class UserRepository:
                 userid = await conn.fetchval('INSERT INTO users (gmail, password, role, full_name) VALUES ($1, $2, $3, $4) RETURNING userid',user.gmail, user.password, role, user.full_name)
                 await conn.execute('INSERT INTO user_status (userid) VALUES ($1)',userid)
                 await conn.execute('INSERT INTO basket (userid) VALUES ($1)',userid)
+                await conn.execute('INSERT INTO user_tokens (userid) VALUES ($1)',userid)
                 tasks.delete_user.apply_async(countdown=300, args=[user.gmail])
 
         except Exception as e:
@@ -44,7 +45,7 @@ class UserRepository:
 
                 return None
         except Exception as e:
-            logger.error(f"get_user_data_from_gmail error: {e}")
+            logger.error(f"[get_user_data_from_gmail error]: {e}")
             return None
 
     async def get_user_status(self, userid) -> bool:
@@ -86,9 +87,9 @@ class UserRepository:
         except Exception as e:
             logger.error(f'[delete_user error]: {e}')
 
-    async def add_refresh_token(self, token: str, userid: int):
+    async def add_refresh_token(self, token: str, gmail: str):
         try:
             async with self.pool.acquire() as conn:
-                await conn.execute('INSERT INTO user_tokens (userid, refresh_token, expires_at) VALUES ($1, $2, $3) ON CONFLICT (userid) DO UPDATE SET refresh_token = $2, expires_at = $3',userid, token, datetime.datetime.now())
+                await conn.execute('UPDATE user_tokens ut SET refresh_token = $1, expires_at = $2 FROM users u WHERE u.gmail = $3 AND ut.userid = u.userid',token, datetime.datetime.now(), gmail)
         except Exception as e:
             logger.error(f'[add_refresh_token error]: {e}')

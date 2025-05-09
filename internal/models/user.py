@@ -7,7 +7,7 @@ class UserCreate(BaseModel):
     password: constr(min_length=8)
     full_name: constr(min_length=1)
 
-class UserLogin(BaseModel):
+class UserSignIn(BaseModel):
     gmail: Optional[EmailStr] = None
     password: constr(min_length=8)
 
@@ -21,3 +21,4 @@ class UserInfo(BaseModel):
     role: str
     added_time: datetime
     account_status: bool
+    password: str

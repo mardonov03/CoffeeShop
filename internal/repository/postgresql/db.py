@@ -53,8 +53,7 @@ async def init_db(pool):
             """)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_tokens (
-                    tokenid BIGSERIAL PRIMARY KEY,
-                    userid BIGINT REFERENCES users(userid) ON DELETE CASCADE,
+                    userid BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
                     refresh_token TEXT UNIQUE,
                     created_at TIMESTAMP DEFAULT now(),
                     expires_at TIMESTAMP
