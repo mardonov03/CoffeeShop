@@ -1,12 +1,13 @@
 from internal.repository.postgresql.user import UserRepository
-from internal.core.security import create_jwt_token
+from internal.core import security
 from internal.models import user as model
 from fastapi import HTTPException
 import bcrypt
 from datetime import datetime
 from internal.core.logging import logger
 from internal.repository.redis.user import RedisUserRepository
-from internal.tasks import mail
+from internal.tasks import mail, user as usertasks
+from internal.core import config
 
 class UserService:
     def __init__(self, pool, redis_pool):
@@ -19,51 +20,62 @@ class UserService:
     async def get_me(self, username):
         return await self.psql_repo.get_user_data(username)
 
-    async def sign_up(self, user: model.UserCreate, tokenuser: dict):
+    async def sign_up(self, user: model.UserCreate):
         try:
             user_data = await self.psql_repo.get_user_data(user.gmail)
             if not user_data:
+                await usertasks.celery .apply_async(countdown=300, args=[user.gmail])
+
+                count = await self.psql_repo.get_user_count()
+
+                role = "superadmin" if count == 0 else "user"
+
+                await self.psql_repo.register_user(user, role)
                 info = await self.send_code(user.gmail)
                 return info
 
-            if user_data['gmail'] and user_data['account_status']:
-                raise HTTPException(status_code=409, detail='Gmail already registered.')
-
-            if user_data['username']:
-                raise HTTPException(status_code=408, detail='Username already taken.')
-
-            if user_data.get('statuscode') and not tokenuser:
-                raise HTTPException(status_code=400, detail="Finish setup on verified device.")
-
-            # Продолжение регистрации
-            hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-            count = await self.psql_repo.get_active_user_count()
-            role = self._get_role(user.gmail, count)
-            await self.psql_repo.finalize_registration(user.username, hashed_pw, user.gmail, role)
-            logger.info(f"User created: {user.username}, role: {role}")
-            token = await create_jwt_token(user.username)
-            return {'token_access': token, 'gmail': user.gmail}
-
+            elif user_data['userid']:
+                is_verified = await self.psql_repo.get_user_status(user_data['userid'])
+                if not is_verified:
+                    info = await self.send_code(user.gmail)
+                    return info
+                else:
+                    raise HTTPException(status_code=409, detail="Gmail already verified and registered.")
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"[sign_up error] {e}")
             raise HTTPException(status_code=500, detail='Registration error.')
 
-    def _get_role(self, gmail: str, user_count: int) -> str:
-        if gmail in self.psql_repo.admin_emails:
-            return 'admin'
-        return 'superadmin' if user_count == 0 else 'user'
-
     async def send_code(self, gmail):
         try:
-            is_code_sended = await self.redis_repo.get_verify_code(gmail)
-            logger.info(is_code_sended)
-            if is_code_sended:
-                return {"status": "ok", "message": "сode already sent"}
-            redis_code = await self.redis_repo.gen_code(gmail)
-            mail.send_verification_email.delay(gmail, redis_code)
-            return {"status": "ok", "message": "verification code sent to email"}
+            token = await security.create_jwt_verify(gmail)
+            verify_url = f"{config.settings.DNS_URL}/users/verify-gmail?token={token}"
+            mail.send_verification_email.delay(gmail, verify_url)
+            return {"status": "ok", "message": "verification link sent to email"}
         except Exception as e:
-            logger.error(f'"send_code error": {e}')
-            raise HTTPException(status_code=500, detail="error sending verification code")
+            logger.error(f'[send_code error]: {e}')
+            raise HTTPException(status_code=500, detail="error sending verification link")
+
+    async def verify_gmail(self, token: str):
+        try:
+            payload = await security.decode_jwt_verify(token)
+            if not payload:
+                raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+            gmail = payload.get("sub")
+            user = await self.psql_repo.get_user_data(gmail)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            if user.get("account_status") == True:
+                return {"status": "ok", "message": "Email already verified"}
+
+            await self.psql_repo.verify_user(gmail)
+            return {"status": "ok", "message": "Email successfully verified"}
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"[verify_gmail error] {e}")
+            raise HTTPException(status_code=500, detail="Internal error")

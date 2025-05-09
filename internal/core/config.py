@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     MAIL_STARTTLS: bool
     MAIL_SSL_TLS: bool
     USE_CREDENTIALS: bool
+    SECRET_KEY_VERIFY: str
+    DNS_URL: str
     class Config:
         env_file = ".env"
 

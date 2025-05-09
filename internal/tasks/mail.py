@@ -1,11 +1,9 @@
 from fastapi_mail import FastMail, MessageSchema
 from internal.core import config
 from internal.core.logging import logger
-from celery import Celery
+from internal.tasks.task import celery
 from fastapi_mail import ConnectionConfig
 import asyncio
-
-celery = Celery("tasks", broker=f"redis://{config.settings.REDIS_HOST}:{config.settings.REDIS_PORT}")
 
 conf = ConnectionConfig(
     MAIL_USERNAME=config.settings.MAIL_USERNAME,
@@ -19,18 +17,16 @@ conf = ConnectionConfig(
 )
 
 @celery.task
-def send_verification_email(gmail: str, code: str):
+def send_verification_email(gmail: str, verify_url: str):
     try:
         message = MessageSchema(
             subject="Verify Your Email",
             recipients=[gmail],
-            body=f"Your verification code is: {code}",
+            body=f"Click this link to verify your email: {verify_url}",
             subtype="plain"
         )
-        logger.info("logger info created")
         fm = FastMail(conf)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(fm.send_message(message))
     except Exception as e:
         logger.error(f"send_verification_email error: {e}")
-
