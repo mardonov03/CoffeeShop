@@ -66,6 +66,15 @@ class UserRepository:
         except Exception as e:
             logger.error(f'[patch_users error]: {e}')
 
+    async def delete_user_from_id(self, userid: int):
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.fetchrow("DELETE FROM users WHERE userid =$1",userid)
+                return {"status": "ok"}
+        except Exception as e:
+            logger.error(f'[delete_user_from_id error]: {e}')
+            return {"status": "error"}
+
     async def get_users(self):
         try:
             async with self.pool.acquire() as conn:

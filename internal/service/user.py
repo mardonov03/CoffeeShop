@@ -27,26 +27,39 @@ class UserService:
             return {"status": 'error'}
 
     async def patch_users(self, for_user: int, user: model.UserUpdate, gmail: str):
-        data = await self.psql_repo.get_user_data_from_gmail(gmail)
+        try:
+            data = await self.psql_repo.get_user_data_from_gmail(gmail)
 
-        if not data:
-            raise HTTPException(status_code=404, detail="User not found")
+            if data:
 
-        if data.role not in ['admin', 'superadmin']:
-            raise HTTPException(status_code=403, detail="You do not have permission to update users")
+                if data.role not in ['admin', 'superadmin']:
+                    raise HTTPException(status_code=403, detail="You do not have permission to update users")
 
-        for_user_data = await self.psql_repo.get_user_data_from_id(for_user)
+                for_user_data = await self.psql_repo.get_user_data_from_id(for_user)
 
-        if user.full_name is not None:
-            for_user_data.full_name = user.full_name
-        if user.gmail is not None:
-            for_user_data.gmail = user.gmail
-        if user.role is not None:
-            for_user_data.role = user.role
+                if user.full_name is not None:
+                    for_user_data.full_name = user.full_name
+                if user.gmail is not None:
+                    for_user_data.gmail = user.gmail
+                if user.role is not None:
+                    for_user_data.role = user.role
 
-        updated_user = await self.psql_repo.patch_users(for_user, for_user_data)
+                updated_user = await self.psql_repo.patch_users(for_user, for_user_data)
 
-        return {"status": "ok", "message": "User updated successfully", "user": updated_user}
+                return {"status": "ok", "message": "User updated successfully", "user": updated_user}
+        except Exception as e:
+            logger.error(f'[patch_users error]: {e}')
+
+    async def delete_users(self, userid: int, gmail: str):
+        try:
+            data = await self.psql_repo.get_user_data_from_gmail(gmail)
+            if data:
+                if data and data.role in ['admin', 'superadmin']:
+                    await self.psql_repo.delete_user_from_id(userid)
+                    return {"status": "ok"}
+        except Exception as e:
+            logger.error(f'[delete_users error]: {e}')
+            raise HTTPException(status_code=500, detail='Delete users error.')
 
     async def get_users(self, gmail):
         try:
