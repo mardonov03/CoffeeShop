@@ -23,8 +23,8 @@ class UserService:
         try:
             user_data = await self.psql_repo.get_user_data(user.gmail)
             if not user_data:
-                await self.send_code(user.gmail)
-                return {"status": "ok", "message": "verification code sent to email"}
+                info = await self.send_code(user.gmail)
+                return info
 
             if user_data['gmail'] and user_data['account_status']:
                 raise HTTPException(status_code=409, detail='Gmail already registered.')
@@ -58,10 +58,12 @@ class UserService:
     async def send_code(self, gmail):
         try:
             is_code_sended = await self.redis_repo.get_verify_code(gmail)
+            logger.info(is_code_sended)
             if is_code_sended:
                 return {"status": "ok", "message": "сode already sent"}
             redis_code = await self.redis_repo.gen_code(gmail)
             mail.send_verification_email.delay(gmail, redis_code)
+            return {"status": "ok", "message": "verification code sent to email"}
         except Exception as e:
             logger.error(f'"send_code error": {e}')
             raise HTTPException(status_code=500, detail="error sending verification code")

@@ -27,6 +27,7 @@ def send_verification_email(gmail: str, code: str):
             body=f"Your verification code is: {code}",
             subtype="plain"
         )
+        logger.info("logger info created")
         fm = FastMail(conf)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(fm.send_message(message))
