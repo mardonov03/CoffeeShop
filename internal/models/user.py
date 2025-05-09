@@ -14,8 +14,7 @@ class UserLogin(BaseModel):
     gmail: Optional[EmailStr] = None
 
 class VerifyGmail(BaseModel):
-    code: constr(min_length=6)
-    gmail: Optional[EmailStr] = None
+    gmail: EmailStr
 
 class UserInfo(BaseModel):
     userid: int
@@ -24,3 +23,4 @@ class UserInfo(BaseModel):
     full_name: str
     role: str
     added_time: datetime
+    account_status: bool

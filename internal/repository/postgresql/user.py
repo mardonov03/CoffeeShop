@@ -10,10 +10,10 @@ class UserRepository:
     async def register_user(self, user: model.UserCreate, role: str):
         try:
             async with self.pool.acquire() as conn:
-                userid = await conn.fetchval('INSERT INTO users (gmail, username, password, role) VALUES ($1, $2, $3, $4) RETURNING userid',user.gmail, user.username, user.password, role)
+                userid = await conn.fetchval('INSERT INTO users (gmail, username, password, role, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING userid',user.gmail, user.username, user.password, role, user.full_name)
                 await conn.execute('INSERT INTO user_status (userid) VALUES ($1)',userid)
                 await conn.execute('INSERT INTO basket (userid) VALUES ($1)',userid)
-                await tasks.delete_user.apply_async(countdown=300, args=[user.gmail, self.pool])
+                tasks.delete_user.apply_async(countdown=300, args=[user.gmail])
 
         except Exception as e:
             logger.error(f'"register_user error": {e}')
@@ -45,6 +45,18 @@ class UserRepository:
         except Exception as e:
             logger.error(f'"get_user_data error": {e}')
 
+    async def get_user_data_from_gmail(self, gmail: str):
+        try:
+            async with self.pool.acquire() as conn:
+                user_data = await conn.fetchrow("SELECT u.*, us.is_verified as account_status FROM users u LEFT JOIN user_status us ON u.userid = us.userid WHERE u.gmail = $1", gmail)
+                if user_data:
+                    return model.UserInfo(**dict(user_data))
+
+                return None
+        except Exception as e:
+            logger.error(f"get_user_data_from_gmail error: {e}")
+            return None
+
     async def get_user_status(self, userid) -> bool:
         try:
             async with self.pool.acquire() as conn:
@@ -65,8 +77,10 @@ class UserRepository:
             logger.warning(f'[is_verified warning]: {e}')
             return False
 
-    async def delete_user_by_gmail(self, gmail):
+    async def delete_user_by_gmail(self, gmail: str):
         try:
+            logger.info("try to delete delete_user_by_gmail")
+            logger.info(gmail)
             async with self.pool.acquire() as conn:
                 await conn.execute('DELETE FROM users WHERE gmail=$1',gmail)
         except Exception as e:

@@ -9,3 +9,6 @@ celery = Celery(
 
 celery.conf.timezone = "UTC"
 celery.conf.task_routes = {"tasks.*": {"queue": "default"}}
+
+import internal.tasks.mail
+import internal.tasks.user

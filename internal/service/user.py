@@ -24,13 +24,13 @@ class UserService:
         try:
             user_data = await self.psql_repo.get_user_data(user.gmail)
             if not user_data:
-                await usertasks.celery .apply_async(countdown=300, args=[user.gmail])
 
                 count = await self.psql_repo.get_user_count()
 
                 role = "superadmin" if count == 0 else "user"
 
                 await self.psql_repo.register_user(user, role)
+
                 info = await self.send_code(user.gmail)
                 return info
 
@@ -64,15 +64,16 @@ class UserService:
                 raise HTTPException(status_code=400, detail="Invalid or expired token")
 
             gmail = payload.get("sub")
-            user = await self.psql_repo.get_user_data(gmail)
+            user = await self.psql_repo.get_user_data_from_gmail(gmail)
+
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            if user.get("account_status") == True:
+            if user.account_status:
                 return {"status": "ok", "message": "Email already verified"}
 
-            await self.psql_repo.verify_user(gmail)
-            return {"status": "ok", "message": "Email successfully verified"}
+            await self.psql_repo.verify_user(model.VerifyGmail(gmail=gmail))
+            return {"status": "ok", "message": "gmail successfully verified"}
 
         except HTTPException:
             raise
