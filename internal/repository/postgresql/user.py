@@ -58,6 +58,14 @@ class UserRepository:
             logger.error(f"[get_user_data_from_id error]: {e}")
             return {"status": 'error'}
 
+    async def patch_users(self, for_user: int, data: model.UserUpdate):
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("UPDATE users SET full_name = $1, gmail = $2, role = $3 WHERE userid = $4 RETURNING *", data.full_name, data.gmail, data.role, for_user)
+            return result
+        except Exception as e:
+            logger.error(f'[patch_users error]: {e}')
+
     async def get_users(self):
         try:
             async with self.pool.acquire() as conn:

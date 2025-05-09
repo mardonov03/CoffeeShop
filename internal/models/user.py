@@ -22,3 +22,8 @@ class UserInfo(BaseModel):
     added_time: datetime
     account_status: bool
     password: str
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    gmail: Optional[str] = None
+    role: Optional[str] = None

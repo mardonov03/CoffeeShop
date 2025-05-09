@@ -26,6 +26,28 @@ class UserService:
             logger.error(f'[get_me error]: {e}')
             return {"status": 'error'}
 
+    async def patch_users(self, for_user: int, user: model.UserUpdate, gmail: str):
+        data = await self.psql_repo.get_user_data_from_gmail(gmail)
+
+        if not data:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if data.role not in ['admin', 'superadmin']:
+            raise HTTPException(status_code=403, detail="You do not have permission to update users")
+
+        for_user_data = await self.psql_repo.get_user_data_from_id(for_user)
+
+        if user.full_name is not None:
+            for_user_data.full_name = user.full_name
+        if user.gmail is not None:
+            for_user_data.gmail = user.gmail
+        if user.role is not None:
+            for_user_data.role = user.role
+
+        updated_user = await self.psql_repo.patch_users(for_user, for_user_data)
+
+        return {"status": "ok", "message": "User updated successfully", "user": updated_user}
+
     async def get_users(self, gmail):
         try:
             data = await self.psql_repo.get_user_data_from_gmail(gmail)
