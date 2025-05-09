@@ -17,6 +17,9 @@ async def get_users(service: UserService = Depends(dependencies.get_user_service
         return {"status": "ok", "message": "please sign in"}
     return await service.get_users(current_user["sub"])
 
+@router.get("/{id}")
+async def get_user_data_from_id(id:int, service: UserService = Depends(dependencies.get_user_service)):
+    return await service.get_user_data_from_id(id)
 
 @router.post('/signup')
 async def sign_up(user: model.UserCreate, service: UserService = Depends(dependencies.get_user_service)):

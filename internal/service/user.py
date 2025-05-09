@@ -36,6 +36,17 @@ class UserService:
         except Exception as e:
             logger.error(f'[get_me error]: {e}')
             return {"status": 'error'}
+
+    async def get_user_data_from_id(self, userid):
+        try:
+            data = await self.psql_repo.get_user_data_from_id(userid)
+            if data:
+                return {"status": 'ok', "user_data": data}
+        except Exception as e:
+            logger.error(f'[get_user_data_from_id error]: {e}')
+            return {"status": 'error'}
+
+
     async def sign_up(self, user: model.UserCreate):
         try:
             user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
