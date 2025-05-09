@@ -18,7 +18,8 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme), servic
             return None
 
         payload = await security.decode_jwt_token(token)
-
+        logger.info("ssssssssssssssssssssssss")
+        logger.info(payload)
         if payload.get("exp") and datetime.datetime.fromtimestamp(payload["exp"]) < datetime.datetime.utcnow():
             refresh_token = payload.get("refresh_token")
             if not refresh_token:

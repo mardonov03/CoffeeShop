@@ -42,11 +42,10 @@ class UserRepository:
                 user_data = await conn.fetchrow("SELECT u.*, us.is_verified as account_status FROM users u LEFT JOIN user_status us ON u.userid = us.userid WHERE u.gmail = $1", gmail)
                 if user_data:
                     return model.UserInfo(**dict(user_data))
-
                 return None
         except Exception as e:
             logger.error(f"[get_user_data_from_gmail error]: {e}")
-            return None
+            return {"status": 'error'}
 
     async def get_user_status(self, userid) -> bool:
         try:
