@@ -66,14 +66,20 @@ class UserRepository:
         except Exception as e:
             logger.warning(f'[is_verified warning]: {e}')
 
-    async def get_refresh_token(self, gmail):
+    async def get_refresh_token(self, gmail: str):
         try:
             async with self.pool.acquire() as conn:
-                refresh_token = await conn.fetchval("SELECT refresh_token FROM user_tokens WHERE gmail = $1", gmail)
+                query = """
+                    SELECT ut.refresh_token
+                    FROM user_tokens ut
+                    JOIN users u ON u.userid = ut.userid
+                    WHERE u.gmail = $1
+                """
+                refresh_token = await conn.fetchval(query, gmail)
                 return {"status": "ok", "token": refresh_token}
         except Exception as e:
             logger.error(f'[get_refresh_token error]: {e}')
-
+            return {"status": "error", "token": None}
 
     async def delete_user(self, gmail: str):
         try:

@@ -107,14 +107,14 @@ class UserService:
 
     async def refresh_access_token(self, refresh_token: str):
         try:
-            payload = await security.decode_jwt_verify(refresh_token)
+            payload = await security.decode_jwt_token(refresh_token)
             if not payload:
                 raise HTTPException(status_code=400, detail="Invalid or expired token")
 
             gmail = payload.get("sub")
             db_token = await self.psql_repo.get_refresh_token(gmail)
 
-            if db_token != refresh_token:
+            if db_token['token'] != refresh_token:
                 raise HTTPException(status_code=404, detail="Server error please sign in again")
 
             access_token = await security.create_jwt_token(gmail, 'access')
@@ -126,4 +126,4 @@ class UserService:
             return {"status": 'ok', "access_token": access_token, "refresh_token": refresh_token, "exp": exp}
         except Exception as e:
             logger.error(f'[refresh_access_token error]: {e}')
-            return {"status": 'error'}
+            raise HTTPException(status_code=500, detail="Internal Server Error. Please try again later.")
