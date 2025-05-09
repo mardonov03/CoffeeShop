@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     USE_CREDENTIALS: bool
     SECRET_KEY_VERIFY: str
     DNS_URL: str
+    JWT_REFRESH_EXPIRE_DAYS: int
+    JWT_ACCESS_EXPIRE_MINUTES: int
     class Config:
         env_file = ".env"
 

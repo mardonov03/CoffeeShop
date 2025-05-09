@@ -2,6 +2,7 @@ from internal.core.logging import logger
 from internal.models import user as model
 from typing import Optional
 from internal.tasks import user as tasks
+import datetime
 
 class UserRepository:
     def __init__(self, pool):
@@ -16,15 +17,14 @@ class UserRepository:
                 tasks.delete_user.apply_async(countdown=300, args=[user.gmail])
 
         except Exception as e:
-            logger.error(f'"register_user error": {e}')
+            logger.error(f'[register_user error]: {e}')
 
     async def verify_user(self, user: model.VerifyGmail):
         try:
             async with self.pool.acquire() as conn:
                 await conn.execute("UPDATE user_status SET is_verified = TRUE FROM users WHERE user_status.userid = users.userid AND users.gmail = $1", user.gmail)
         except Exception as e:
-            logger.error(f'"verify_user error": {e}')
-
+            logger.error(f'[verify_user error]: {e}')
 
     async def get_user_count(self) -> Optional[int]:
         try:
@@ -34,7 +34,6 @@ class UserRepository:
         except Exception as e:
             logger.error(f'get_user_count error: {e}')
             return None
-
 
     async def get_user_data_from_gmail(self, gmail: str):
         try:
@@ -56,7 +55,7 @@ class UserRepository:
                     return data["is_verified"]
                 return False
         except Exception as e:
-            logger.error(f'"get_user_status error": {e}')
+            logger.error(f'[get_user_status error]: {e}')
             return False
 
     async def is_verified(self, gmail) -> bool:
@@ -66,7 +65,6 @@ class UserRepository:
                 return is_verified if is_verified is not None else False
         except Exception as e:
             logger.warning(f'[is_verified warning]: {e}')
-            return False
 
     async def delete_user(self, gmail: str):
         try:
@@ -87,3 +85,10 @@ class UserRepository:
 
         except Exception as e:
             logger.error(f'[delete_user error]: {e}')
+
+    async def add_refresh_token(self, token: str, userid: int):
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute('INSERT INTO user_tokens (userid, refresh_token, expires_at) VALUES ($1, $2, $3) ON CONFLICT (userid) DO UPDATE SET refresh_token = $2, expires_at = $3',userid, token, datetime.datetime.now())
+        except Exception as e:
+            logger.error(f'[add_refresh_token error]: {e}')

@@ -14,11 +14,11 @@ async def eventstart():
         await db.init_db(app.state.pool)
         app.state.redis_pool = await redis_db.create_redis()
     except Exception as e:
-        logger.error(f'"eventstart error": {e}')
+        logger.error(f'[eventstart error]: {e}')
 
 @app.on_event('shutdown')
 async def shutdownevent():
     try:
         await app.state.pool.close()
     except Exception as e:
-        logger.error(f'"shutdownevent error": {e}')
+        logger.error(f'[shutdownevent error]: {e}')

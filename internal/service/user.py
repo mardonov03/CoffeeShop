@@ -1,13 +1,14 @@
 from internal.repository.postgresql.user import UserRepository
 from internal.core import security
 from internal.models import user as model
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 import bcrypt
-from datetime import datetime
 from internal.core.logging import logger
 from internal.repository.redis.user import RedisUserRepository
 from internal.tasks import mail
 from internal.core import config
+from internal import dependencies
+
 
 class UserService:
     def __init__(self, pool, redis_pool):
@@ -28,6 +29,9 @@ class UserService:
                 count = await self.psql_repo.get_user_count()
 
                 role = "superadmin" if count == 0 else "user"
+
+                hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+                user.password = hashed_password.decode('utf-8')
 
                 await self.psql_repo.register_user(user, role)
 
@@ -73,6 +77,7 @@ class UserService:
                 return {"status": "ok", "message": "Email already verified"}
 
             await self.psql_repo.verify_user(model.VerifyGmail(gmail=gmail))
+
             return {"status": "ok", "message": "gmail successfully verified"}
 
         except HTTPException:
@@ -80,3 +85,20 @@ class UserService:
         except Exception as e:
             logger.error(f"[verify_gmail error] {e}")
             raise HTTPException(status_code=500, detail="Internal error")
+
+    async def singn_in(self, user: model.UserLogin):
+        try:
+            user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
+            if user_data and bcrypt.checkpw(user.password.encode('utf-8'), user_data['password'].encode('utf-8')):
+                access_token = await security.create_jwt_token(user.gmail, 'access')
+                refresh_token = await security.create_jwt_token(user.gmail, 'refresh')
+                await self.psql_repo.add_refresh_token(refresh_token, user.userid)
+                return {"status": "ok", "access_token": access_token}
+        except Exception as e:
+            logger.error(f'[singn_in error]: {e}')
+
+    async def update_access_token(self, token: str):
+        try:
+            pass
+        except Exception as e:
+            logger.error(f'[update_access_token error]: {e}')
