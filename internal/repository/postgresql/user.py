@@ -46,6 +46,14 @@ class UserRepository:
         except Exception as e:
             logger.error(f"[get_user_data_from_gmail error]: {e}")
             return {"status": 'error'}
+    async def get_users(self):
+        try:
+            async with self.pool.acquire() as conn:
+                users = await conn.fetch("SELECT u.*, us.is_verified as account_status FROM users u LEFT JOIN user_status us ON u.userid = us.userid")
+                users_list = [model.UserInfo(**user) for user in users]
+                return {"status": 'ok', "users": users_list}
+        except Exception as e:
+            logger.error(f'[get_users error]: {e}')
 
     async def get_user_status(self, userid) -> bool:
         try:

@@ -11,6 +11,13 @@ async def get_me(service: UserService = Depends(dependencies.get_user_service), 
         return {"status": "ok", "message": "please sign in"}
     return await service.get_me(current_user["sub"])
 
+@router.get("/")
+async def get_users(service: UserService = Depends(dependencies.get_user_service), current_user: dict = Depends(dependencies.get_current_user)):
+    if not current_user:
+        return {"status": "ok", "message": "please sign in"}
+    return await service.get_users(current_user["sub"])
+
+
 @router.post('/signup')
 async def sign_up(user: model.UserCreate, service: UserService = Depends(dependencies.get_user_service)):
     return await service.sign_up(user)

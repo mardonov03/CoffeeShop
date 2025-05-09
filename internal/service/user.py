@@ -26,6 +26,16 @@ class UserService:
             logger.error(f'[get_me error]: {e}')
             return {"status": 'error'}
 
+    async def get_users(self, gmail):
+        try:
+            data = await self.psql_repo.get_user_data_from_gmail(gmail)
+            if data and data.role in ['admin', 'superadmin']:
+                users = await self.psql_repo.get_users()
+                if users['status']=="ok":
+                    return users
+        except Exception as e:
+            logger.error(f'[get_me error]: {e}')
+            return {"status": 'error'}
     async def sign_up(self, user: model.UserCreate):
         try:
             user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
