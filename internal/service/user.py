@@ -7,7 +7,6 @@ from internal.core.logging import logger
 from internal.repository.redis.user import RedisUserRepository
 from internal.tasks import mail
 from internal.core import config
-from internal import dependencies
 
 
 class UserService:
