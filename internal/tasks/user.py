@@ -11,7 +11,7 @@ def delete_user(gmail: str):
             repo = UserRepository(pool)
             is_verified = await repo.is_verified(gmail)
             if not is_verified:
-                await repo.delete_user_by_gmail(gmail)
+                await repo.delete_user(gmail)
             await pool.close()
         except Exception as e:
             print(f"[delete_user error]: {e}")

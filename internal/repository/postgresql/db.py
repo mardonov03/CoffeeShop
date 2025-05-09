@@ -39,7 +39,6 @@ async def init_db(pool):
                 CREATE TABLE IF NOT EXISTS users (
                     userid SERIAL PRIMARY KEY,
                     full_name TEXT,
-                    username TEXT UNIQUE,
                     password TEXT,
                     gmail TEXT UNIQUE,
                     added_time TIMESTAMP DEFAULT now(),

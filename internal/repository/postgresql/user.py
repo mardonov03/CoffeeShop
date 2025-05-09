@@ -10,7 +10,7 @@ class UserRepository:
     async def register_user(self, user: model.UserCreate, role: str):
         try:
             async with self.pool.acquire() as conn:
-                userid = await conn.fetchval('INSERT INTO users (gmail, username, password, role, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING userid',user.gmail, user.username, user.password, role, user.full_name)
+                userid = await conn.fetchval('INSERT INTO users (gmail, password, role, full_name) VALUES ($1, $2, $3, $4) RETURNING userid',user.gmail, user.password, role, user.full_name)
                 await conn.execute('INSERT INTO user_status (userid) VALUES ($1)',userid)
                 await conn.execute('INSERT INTO basket (userid) VALUES ($1)',userid)
                 tasks.delete_user.apply_async(countdown=300, args=[user.gmail])
@@ -35,15 +35,6 @@ class UserRepository:
             logger.error(f'get_user_count error: {e}')
             return None
 
-    async def get_user_data(self, username):
-        try:
-            async with self.pool.acquire() as conn:
-                data = await conn.fetchrow("SELECT * FROM users WHERE username = $1", username)
-                if data:
-                    return model.UserInfo(**dict(data))
-                return None
-        except Exception as e:
-            logger.error(f'"get_user_data error": {e}')
 
     async def get_user_data_from_gmail(self, gmail: str):
         try:
@@ -77,11 +68,22 @@ class UserRepository:
             logger.warning(f'[is_verified warning]: {e}')
             return False
 
-    async def delete_user_by_gmail(self, gmail: str):
+    async def delete_user(self, gmail: str):
         try:
-            logger.info("try to delete delete_user_by_gmail")
-            logger.info(gmail)
             async with self.pool.acquire() as conn:
-                await conn.execute('DELETE FROM users WHERE gmail=$1',gmail)
+                user = await conn.fetchrow("SELECT userid FROM users WHERE gmail=$1", gmail)
+                if not user:
+                    logger.warning("User not found")
+                    return
+
+                userid = user["userid"]
+
+                await conn.execute("DELETE FROM basket WHERE userid = $1", userid)
+                await conn.execute("DELETE FROM orders WHERE userid = $1", userid)
+                await conn.execute("DELETE FROM user_tokens WHERE userid = $1", userid)
+                await conn.execute("DELETE FROM user_status WHERE userid = $1", userid)
+
+                await conn.execute("DELETE FROM users WHERE userid=$1", userid)
+
         except Exception as e:
-            logger.error(f'[delete_user_by_gmail error]: {e}')
+            logger.error(f'[delete_user error]: {e}')

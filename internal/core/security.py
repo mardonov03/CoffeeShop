@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 from internal.core.logging import logger
 from typing import Optional
 
-async def create_jwt_token(username: str) -> Optional[str]:
+async def create_jwt_token(gmail: str) -> Optional[str]:
     try:
         expiration = datetime.utcnow() + timedelta(minutes=config.settings.JWT_EXPIRE_MINUTES)
-        payload = {"sub": username.lower(), "exp": expiration}
+        payload = {"sub": gmail.lower(), "exp": expiration}
         return jwt.encode(payload, config.settings.SECRET_KEY, algorithm=config.settings.ALGORITHM)
     except Exception as e:
         logger.error(f'[create_jwt_token] {e}')
@@ -24,10 +24,10 @@ async def decode_jwt_token(token: str) -> dict | None:
         logger.warning(f'"decode_jwt_token error": {e}')
         return None
 
-async def create_jwt_verify(username: str) -> Optional[str]:
+async def create_jwt_verify(gmail: str) -> Optional[str]:
     try:
         expiration = datetime.utcnow() + timedelta(minutes=5)
-        payload = {"sub": username.lower(), "exp": expiration}
+        payload = {"sub": gmail.lower(), "exp": expiration}
         return jwt.encode(payload, config.settings.SECRET_KEY_VERIFY, algorithm=config.settings.ALGORITHM)
     except Exception as e:
         logger.error(f'[create_jwt_token] {e}')

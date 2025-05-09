@@ -3,22 +3,19 @@ from typing import Optional
 from datetime import datetime
 
 class UserCreate(BaseModel):
-    username: constr(min_length=1)
-    password: constr(min_length=8)
     gmail: EmailStr
+    password: constr(min_length=8)
     full_name: constr(min_length=1)
 
 class UserLogin(BaseModel):
-    username: Optional[constr(min_length=1)] = None
-    password: constr(min_length=8)
     gmail: Optional[EmailStr] = None
+    password: constr(min_length=8)
 
 class VerifyGmail(BaseModel):
     gmail: EmailStr
 
 class UserInfo(BaseModel):
     userid: int
-    username: str
     gmail: EmailStr
     full_name: str
     role: str

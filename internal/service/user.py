@@ -6,7 +6,7 @@ import bcrypt
 from datetime import datetime
 from internal.core.logging import logger
 from internal.repository.redis.user import RedisUserRepository
-from internal.tasks import mail, user as usertasks
+from internal.tasks import mail
 from internal.core import config
 
 class UserService:
@@ -17,12 +17,12 @@ class UserService:
     async def get_user_count(self):
         return await self.psql_repo.get_user_count()
 
-    async def get_me(self, username):
-        return await self.psql_repo.get_user_data(username)
+    async def get_me(self, gmail):
+        return await self.psql_repo.get_user_data_from_gmail(gmail)
 
     async def sign_up(self, user: model.UserCreate):
         try:
-            user_data = await self.psql_repo.get_user_data(user.gmail)
+            user_data = await self.psql_repo.get_user_data_from_gmail(user.gmail)
             if not user_data:
 
                 count = await self.psql_repo.get_user_count()
@@ -31,13 +31,13 @@ class UserService:
 
                 await self.psql_repo.register_user(user, role)
 
-                info = await self.send_code(user.gmail)
+                info = await self.send_verify_url(user.gmail)
                 return info
 
             elif user_data['userid']:
                 is_verified = await self.psql_repo.get_user_status(user_data['userid'])
                 if not is_verified:
-                    info = await self.send_code(user.gmail)
+                    info = await self.send_verify_url(user.gmail)
                     return info
                 else:
                     raise HTTPException(status_code=409, detail="Gmail already verified and registered.")
@@ -47,14 +47,14 @@ class UserService:
             logger.error(f"[sign_up error] {e}")
             raise HTTPException(status_code=500, detail='Registration error.')
 
-    async def send_code(self, gmail):
+    async def send_verify_url(self, gmail):
         try:
             token = await security.create_jwt_verify(gmail)
             verify_url = f"{config.settings.DNS_URL}/users/verify-gmail?token={token}"
             mail.send_verification_email.delay(gmail, verify_url)
             return {"status": "ok", "message": "verification link sent to email"}
         except Exception as e:
-            logger.error(f'[send_code error]: {e}')
+            logger.error(f'[send_verify_url error]: {e}')
             raise HTTPException(status_code=500, detail="error sending verification link")
 
     async def verify_gmail(self, token: str):

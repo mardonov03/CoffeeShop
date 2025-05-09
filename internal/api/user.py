@@ -1,20 +1,15 @@
 from fastapi import APIRouter, Depends
 from internal.service.user import UserService
 from internal import dependencies
-from internal.core.logging import logger
 from internal.models import user as model
 
 router = APIRouter()
-
-@router.get("/count") # бу хозрча турсн кейнчали регистрация пайтида бринчи .зер админ клшчун кере
-async def get_user_count(service: UserService = Depends(dependencies.get_user_service)):
-    return await service.get_user_count()
 
 @router.get("/me")
 async def get_me(service: UserService = Depends(dependencies.get_user_service), current_user: dict = Depends(dependencies.get_current_user)):
     if not current_user:
         return {"status": "ok", "message": "please sign in"}
-    return await service.get_me(current_user["username"])
+    return await service.get_me(current_user["gmail"])
 
 @router.post('/signup')
 async def sign_up(user: model.UserCreate, service: UserService = Depends(dependencies.get_user_service)):
