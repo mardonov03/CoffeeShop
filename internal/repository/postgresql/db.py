@@ -76,5 +76,21 @@ async def init_db(pool):
                     added_time TIMESTAMP NOT NULL DEFAULT now()
                 );
             """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS category (
+                    categoryid BIGSERIAL PRIMARY KEY,
+                    name TEXT UNIQUE
+                );
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS product (
+                    productid BIGSERIAL PRIMARY KEY,
+                    name TEXT,
+                    info TEXT,
+                    price BIGINT,
+                    volume_ml FLOAT,
+                    categoryid BIGINT REFERENCES category(categoryid)
+                );
+            """)
     except Exception as e:
         logger.error(f'init_db error: {e}')

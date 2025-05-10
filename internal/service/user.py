@@ -52,19 +52,27 @@ class UserService:
 
     async def delete_users(self, userid: int, gmail: str):
         try:
-            data = await self.psql_repo.get_user_data_from_gmail(gmail)
-            if data:
-                if data and data.role in ['admin', 'superadmin']:
-                    await self.psql_repo.delete_user_from_id(userid)
-                    return {"status": "ok"}
+            is_admin = await self.is_admin(gmail)
+            if is_admin:
+                await self.psql_repo.delete_user_from_id(userid)
+                return {"status": "ok"}
         except Exception as e:
             logger.error(f'[delete_users error]: {e}')
             raise HTTPException(status_code=500, detail='Delete users error.')
+    async def is_admin(self, gmail:str) -> bool:
+        try:
+            is_admin = await self.is_admin(gmail)
+            if is_admin:
+                return True
+            return False
+        except Exception as e:
+            logger.error(f'[is_admin error]: {e}')
+            return False
 
     async def get_users(self, gmail):
         try:
-            data = await self.psql_repo.get_user_data_from_gmail(gmail)
-            if data and data.role in ['admin', 'superadmin']:
+            is_admin = await self.is_admin(gmail)
+            if is_admin:
                 users = await self.psql_repo.get_users()
                 if users['status']=="ok":
                     return users
@@ -120,7 +128,7 @@ class UserService:
     async def send_verify_url(self, gmail):
         try:
             token = await security.create_jwt_verify(gmail)
-            verify_url = f"{config.settings.DNS_URL}/users/verify-gmail?token={token}"
+            verify_url = f"{config.settings.DNS_URL}/auth/verify-gmail?token={token}"
             mail.send_verification_email.delay(gmail, verify_url)
             return {"status": "ok", "message": "verification link sent to email"}
         except Exception as e:
