@@ -12,7 +12,8 @@ def get_user_service(request: Request) -> UserService:
     return UserService(request.app.state.pool, request.app.state.redis_pool)
 
 def get_menu_service(request: Request) -> MenuService:
-    return MenuService(request.app.state.pool, request.app.state.redis_pool)
+    user_service = get_user_service(request)
+    return MenuService(request.app.state.pool, request.app.state.redis_pool, user_service)
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
     try:

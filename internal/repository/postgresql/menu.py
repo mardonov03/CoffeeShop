@@ -1,6 +1,7 @@
 from internal.core.logging import logger
 from internal.models import menu as model
 from typing import List
+from fastapi import HTTPException
 
 class MenuRepository:
     def __init__(self, pool):
@@ -25,27 +26,35 @@ class MenuRepository:
     async def create_product(self, product: model.ProductCreate):
         try:
             async with self.pool.acquire() as conn:
-                await conn.execute("INSERT INTO product (name, info, price, volume_ml, categoryid) VALUES ($1, $2, $3, $4, $5)", product.name, product.info, product.price, product.volume_ml, product.category_id)
+                await conn.execute("INSERT INTO product (name, info, price, volume_ml, categoryid) VALUES ($1, $2, $3, $4, $5)", product.name, product.info, product.price, product.volume_ml, product.categoryid)
         except Exception as e:
             logger.error(f"[create_product error]: {e}")
 
-    async def get_products_by_category(self, category_id: int) -> List[model.ProductInfo]:
+    async def get_products_by_id(self, prod_id: int) -> model.ProductInfo:
         try:
             async with self.pool.acquire() as conn:
-                records = await conn.fetch("""
-                    SELECT * FROM product WHERE categoryid = $1
-                """, category_id)
-                return [model.ProductInfo(**dict(r)) for r in records]
+                product = await conn.fetchrow("SELECT p.productid, p.name,p.info, p.price, p.volume_ml, p.categoryid, c.categoryname FROM product p LEFT JOIN category c ON p.categoryid = c.categoryid WHERE productid = $1", prod_id)
+                if product:
+                    return model.ProductInfo(**dict(product))
         except Exception as e:
-            logger.error(f"[get_products_by_category error]: {e}")
+            logger.error(f"[get_products_by_id error]: {e}")
+
+    async def get_all_products(self) -> list[model.ProductInfo]:
+        try:
+            async with self.pool.acquire() as conn:
+                products = await conn.fetch("SELECT p.productid, p.name,p.info, p.price, p.volume_ml, p.categoryid, c.categoryname FROM product p LEFT JOIN category c ON p.categoryid = c.categoryid")
+                if products:
+                    return [model.ProductInfo(**dict(r)) for r in products]
+        except Exception as e:
+            logger.error(f"[get_all_products error]: {e}")
             return []
 
     async def delete_product(self, product_id: int):
         try:
             async with self.pool.acquire() as conn:
-                result = await conn.execute("DELETE FROM product WHERE id = $1", product_id)
+                result = await conn.execute("DELETE FROM product WHERE productid = $1", product_id)
                 if result == 'DELETE 0':
-                    logger.error(f"[delete_product error]: No product found with id {product_id}")
+                    logger.error(f"[delete_product error]: No product found with productid {product_id}")
         except Exception as e:
             logger.error(f"[delete_product error]: {e}")
 
@@ -55,33 +64,27 @@ class MenuRepository:
             params = []
 
             if product_update.name:
-                updates.append("name = $1")
+                updates.append("name = ${}".format(len(params) + 1))
                 params.append(product_update.name)
             if product_update.info:
-                updates.append("info = $2")
+                updates.append("info = ${}".format(len(params) + 1))
                 params.append(product_update.info)
             if product_update.price:
-                updates.append("price = $3")
+                updates.append("price = ${}".format(len(params) + 1))
                 params.append(product_update.price)
             if product_update.volume_ml:
-                updates.append("volume_ml = $4")
+                updates.append("volume_ml = ${}".format(len(params) + 1))
                 params.append(product_update.volume_ml)
-            if product_update.category_id:
-                updates.append("categoryid = $5")
-                params.append(product_update.category_id)
+            if product_update.categoryid:
+                updates.append("categoryid = ${}".format(len(params) + 1))
+                params.append(product_update.categoryid)
+
+            params.append(product_id)
 
             if updates:
-                query = f"UPDATE product SET {', '.join(updates)} WHERE id = ${len(params) + 1}"
-                params.append(product_id)
+                query = f"UPDATE product SET {', '.join(updates)} WHERE productid = ${len(params)}"
                 async with self.pool.acquire() as conn:
                     await conn.execute(query, *params)
         except Exception as e:
             logger.error(f"[patch_product error]: {e}")
 
-    async def patch_category(self, category_id: int, category_update: model.CategoryUpdate):
-        try:
-            if category_update.name:
-                async with self.pool.acquire() as conn:
-                    await conn.execute("UPDATE category SET name = $1 WHERE id = $2", category_update.name, category_id)
-        except Exception as e:
-            logger.error(f"[patch_category error]: {e}")

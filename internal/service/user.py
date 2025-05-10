@@ -61,8 +61,8 @@ class UserService:
             raise HTTPException(status_code=500, detail='Delete users error.')
     async def is_admin(self, gmail:str) -> bool:
         try:
-            is_admin = await self.is_admin(gmail)
-            if is_admin:
+            data = await self.psql_repo.get_user_data_from_gmail(gmail)
+            if data and data.role in ['admin', 'superadmin']:
                 return True
             return False
         except Exception as e:

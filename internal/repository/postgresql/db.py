@@ -79,7 +79,7 @@ async def init_db(pool):
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS category (
                     categoryid BIGSERIAL PRIMARY KEY,
-                    name TEXT UNIQUE
+                    categoryname TEXT UNIQUE
                 );
             """)
             await conn.execute("""

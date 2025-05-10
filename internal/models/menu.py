@@ -1,35 +1,34 @@
 from pydantic import BaseModel, constr, conint
-from typing import Optional
 
 class CategoryCreate(BaseModel):
     name: constr(min_length=1)
 
 class ProductCreate(BaseModel):
     name: constr(min_length=1)
-    info: Optional[str] = None
+    info: str | None = None
     price: conint(ge=0)
     volume_ml: conint(ge=0)
-    category_id: conint(ge=1)
+    categoryid: conint(ge=1) = None
 
 class CategoryInfo(BaseModel):
     id: conint(ge=1)
     name: str
 
 class ProductInfo(BaseModel):
-    id: conint(ge=1)
+    productid: int
     name: str
-    info: Optional[str]
-    price: conint(ge=0)
-    volume_ml: conint(ge=0)
-    category_id: conint(ge=1)
-    category_name: str
+    info: str | None = None
+    price: int
+    volume_ml: float
+    categoryid: int | None = None
+    categoryname: str | None = None
 
 class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    info: Optional[str] = None
-    price: Optional[int] = None
-    volume_ml: Optional[float] = None
-    category_id: Optional[int] = None
+    name: str | None = None
+    info: str | None = None
+    price: int | None = None
+    volume_ml: float | None = None
+    categoryid: int | None = None
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None

@@ -1,5 +1,4 @@
-from pydantic import BaseModel, constr, EmailStr,conint
-from typing import Optional
+from pydantic import BaseModel, constr, EmailStr
 from datetime import datetime
 
 class UserCreate(BaseModel):
@@ -8,7 +7,7 @@ class UserCreate(BaseModel):
     full_name: constr(min_length=1)
 
 class UserSignIn(BaseModel):
-    gmail: Optional[EmailStr] = None
+    gmail: EmailStr
     password: constr(min_length=8)
 
 class VerifyGmail(BaseModel):
@@ -24,6 +23,6 @@ class UserInfo(BaseModel):
     password: str
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    gmail: Optional[str] = None
-    role: Optional[str] = None
+    full_name: str | None = None
+    gmail: str | None = None
+    role: str | None = None
