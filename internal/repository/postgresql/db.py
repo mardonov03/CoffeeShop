@@ -83,12 +83,11 @@ async def init_db(pool):
             """)
 
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS cart_items (
-                    itemid BIGSERIAL PRIMARY KEY,
+                CREATE TABLE IF NOT EXISTS cart_products (
                     cartid BIGINT NOT NULL REFERENCES cart(cartid) ON DELETE CASCADE,
                     productid BIGINT NOT NULL REFERENCES product(productid) ON DELETE CASCADE,
                     quantity INTEGER NOT NULL CHECK (quantity > 0),
-                    UNIQUE (cartid, productid)
+                    PRIMARY KEY (cartid, productid)
                 );
             """)
 

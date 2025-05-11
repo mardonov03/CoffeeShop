@@ -15,7 +15,7 @@ def get_user_service(request: Request) -> UserService:
 def get_menu_service(request: Request) -> MenuService:
     user_service = get_user_service(request)
     return MenuService(request.app.state.pool, request.app.state.redis_pool, user_service)
-def create_cart_service(request: Request) -> CartService:
+def get_cart_service(request: Request) -> CartService:
     userser_service = get_user_service(request)
     return CartService(request.app.state.pool, userser_service)
 

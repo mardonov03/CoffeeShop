@@ -6,15 +6,15 @@ class GetCart(BaseModel):
     cartid: int
     userid: int
     added_time: datetime.timedelta
-    items: list[menu.ProductInfo] | None = None
+    products: list[menu.ProductInfo] | None = None
 
-class AddItem:
+class AddProduct:
     pass
 
 class EditCart:
     pass
 
-class DeleteItem:
+class DeleteProduct:
     pass
 
 class Clear:
