@@ -13,7 +13,7 @@ class UserRepository:
             async with self.pool.acquire() as conn:
                 userid = await conn.fetchval('INSERT INTO users (gmail, password, role, full_name) VALUES ($1, $2, $3, $4) RETURNING userid',user.gmail, user.password, role, user.full_name)
                 await conn.execute('INSERT INTO user_status (userid) VALUES ($1)',userid)
-                await conn.execute('INSERT INTO basket (userid) VALUES ($1)',userid)
+                await conn.execute('INSERT INTO cart (userid) VALUES ($1)',userid)
                 await conn.execute('INSERT INTO user_tokens (userid) VALUES ($1)',userid)
                 tasks.delete_user.apply_async(countdown=300, args=[user.gmail])
 
@@ -128,13 +128,7 @@ class UserRepository:
 
                 userid = user["userid"]
 
-                await conn.execute("DELETE FROM basket WHERE userid = $1", userid)
-                await conn.execute("DELETE FROM orders WHERE userid = $1", userid)
-                await conn.execute("DELETE FROM user_tokens WHERE userid = $1", userid)
-                await conn.execute("DELETE FROM user_status WHERE userid = $1", userid)
-
                 await conn.execute("DELETE FROM users WHERE userid=$1", userid)
-
         except Exception as e:
             logger.error(f'[delete_user error]: {e}')
 

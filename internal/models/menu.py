@@ -4,14 +4,14 @@ class ProductCreate(BaseModel):
     name: constr(min_length=1)
     info: str | None = None
     price: conint(ge=0)
-    volume_ml: conint(ge=0)
+    volume_ml: float
     categoryid: conint(ge=1) = None
 
 class ProductInfo(BaseModel):
     productid: int
     name: str
     info: str | None = None
-    price: int
+    price: conint(ge=1)
     volume_ml: float
     categoryid: int | None = None
     categoryname: str | None = None

@@ -4,7 +4,7 @@ from datetime import datetime
 class UserCreate(BaseModel):
     gmail: EmailStr
     password: constr(min_length=8)
-    full_name: constr(min_length=1)
+    full_name: str | None = None
 
 class UserSignIn(BaseModel):
     gmail: EmailStr
@@ -16,7 +16,7 @@ class VerifyGmail(BaseModel):
 class UserInfo(BaseModel):
     userid: int
     gmail: EmailStr
-    full_name: str
+    full_name: str | None = None
     role: str
     added_time: datetime
     account_status: bool

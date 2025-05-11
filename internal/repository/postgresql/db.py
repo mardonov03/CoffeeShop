@@ -28,6 +28,7 @@ async def init_db(pool):
                     END IF;
                 END$$;
                 """)
+
             await conn.execute("""DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'roles') THEN
@@ -35,22 +36,25 @@ async def init_db(pool):
                     END IF;
                 END$$;
                 """)
+
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     userid SERIAL PRIMARY KEY,
                     full_name TEXT,
-                    password TEXT,
-                    gmail TEXT UNIQUE,
+                    password TEXT NOT NULL,
+                    gmail TEXT UNIQUE NOT NULL,
                     added_time TIMESTAMP DEFAULT now(),
                     role roles DEFAULT 'user'
                 );
             """)
+
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_status (
                     userid BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
                     is_verified BOOLEAN DEFAULT FALSE
                 );
             """)
+
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_tokens (
                     userid BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
@@ -63,32 +67,45 @@ async def init_db(pool):
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS orders (
                     orderid BIGSERIAL PRIMARY KEY,
-                    userid BIGINT REFERENCES users(userid) ON DELETE CASCADE,
-                    status order_status DEFAULT 'created',
+                    userid BIGINT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
+                    status order_status NOT NULL DEFAULT 'created',
                     added_time TIMESTAMP NOT NULL DEFAULT now(),
                     updated_time TIMESTAMP
                 );
             """)
+
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS basket (
-                    basketid BIGSERIAL PRIMARY KEY,
-                    userid BIGINT UNIQUE REFERENCES users(userid) ON DELETE CASCADE,
+                CREATE TABLE IF NOT EXISTS cart (
+                    cartid BIGSERIAL PRIMARY KEY,
+                    userid BIGINT NOT NULL UNIQUE REFERENCES users(userid) ON DELETE CASCADE,
                     added_time TIMESTAMP NOT NULL DEFAULT now()
                 );
             """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS cart_items (
+                    itemid BIGSERIAL PRIMARY KEY,
+                    cartid BIGINT NOT NULL REFERENCES cart(cartid) ON DELETE CASCADE,
+                    productid BIGINT NOT NULL REFERENCES product(productid) ON DELETE CASCADE,
+                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    UNIQUE (cartid, productid)
+                );
+            """)
+
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS category (
                     categoryid BIGSERIAL PRIMARY KEY,
-                    categoryname TEXT UNIQUE
+                    categoryname TEXT UNIQUE NOT NULL
                 );
             """)
+
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS product (
                     productid BIGSERIAL PRIMARY KEY,
-                    name TEXT,
+                    name TEXT NOT NULL,
                     info TEXT,
-                    price BIGINT,
-                    volume_ml FLOAT,
+                    price BIGINT NOT NULL,
+                    volume_ml FLOAT NOT NULL,
                     categoryid BIGINT REFERENCES category(categoryid) ON DELETE CASCADE,
                     UNIQUE (name, volume_ml)
                 );
