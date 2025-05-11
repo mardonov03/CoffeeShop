@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from internal.repository.postgresql import db
 from internal.core.logging import logger
-from internal.api import user, auth, products, categories
+from internal.api import user, auth, products, categories, cart
 from internal.repository.redis import db as redis_db
 
 app = FastAPI()

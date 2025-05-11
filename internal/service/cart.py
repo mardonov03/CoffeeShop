@@ -8,7 +8,7 @@ class CartService:
         self.user_service=service
 
     async def get_cart_products(self, cartid: int, gmail: str):
-        pass
+        return {"status": "ok"}
 
     async def add_product(self, productid: int, cartid: int, quantity: int, gmail: str):
         pass
