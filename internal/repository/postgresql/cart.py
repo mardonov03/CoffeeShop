@@ -6,7 +6,7 @@ class CartRepository:
 
     async def get_cart_products(self, cartid: int, gmail: str):
         try:
-            pass
+            return {"status": 'test 2'}
         except Exception as e:
             logger.error(f'[get_cart_products error]: {e}')
 
