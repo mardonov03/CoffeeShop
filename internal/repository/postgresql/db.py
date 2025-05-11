@@ -83,15 +83,6 @@ async def init_db(pool):
             """)
 
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS cart_products (
-                    cartid BIGINT NOT NULL REFERENCES cart(cartid) ON DELETE CASCADE,
-                    productid BIGINT NOT NULL REFERENCES product(productid) ON DELETE CASCADE,
-                    quantity INTEGER NOT NULL CHECK (quantity > 0),
-                    PRIMARY KEY (cartid, productid)
-                );
-            """)
-
-            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS category (
                     categoryid BIGSERIAL PRIMARY KEY,
                     categoryname TEXT UNIQUE NOT NULL
@@ -107,6 +98,15 @@ async def init_db(pool):
                     volume_ml FLOAT NOT NULL,
                     categoryid BIGINT REFERENCES category(categoryid) ON DELETE CASCADE,
                     UNIQUE (name, volume_ml)
+                );
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS cart_products (
+                    cartid BIGINT NOT NULL REFERENCES cart(cartid) ON DELETE CASCADE,
+                    productid BIGINT NOT NULL REFERENCES product(productid) ON DELETE CASCADE,
+                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    PRIMARY KEY (cartid, productid)
                 );
             """)
     except Exception as e:
