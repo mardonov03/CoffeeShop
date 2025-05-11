@@ -11,68 +11,38 @@ class MenuService:
         self.redis_repo = RedisMenuRepository(redis_pool)
         self.user_service = user_service
 
-
     async def create_category(self, category: model.CategoryCreate, gmail: str):
-        try:
-            is_admin = await self.user_service.is_admin(gmail)
-            if is_admin:
-                await self.psql_repo.create_category(category)
-                return {"status": "ok", "message": "Category created successfully"}
-        except Exception as e:
-            logger.error(f"[create_category error]: {e}")
-            raise HTTPException(status_code=500, detail="Error creating category")
+        is_admin = await self.user_service.is_admin(gmail)
+        if is_admin:
+            await self.psql_repo.create_category(category)
+            return {"status": "ok", "message": "Category created successfully"}
 
     async def get_all_categories(self):
-        try:
-            categories = await self.psql_repo.get_all_categories()
-            return {"status": "ok", "categories": categories}
-        except Exception as e:
-            logger.error(f"[get_all_categories error]: {e}")
-            return {"status": "error", "message": "Error fetching categories"}
+        categories = await self.psql_repo.get_all_categories()
+        return {"status": "ok", "categories": categories}
 
     async def create_product(self, product: model.ProductCreate, gmail: str):
-        try:
-            is_admin = await self.user_service.is_admin(gmail)
-            if is_admin:
-                await self.psql_repo.create_product(product)
-                return {"status": "ok", "message": "Product created successfully"}
-        except Exception as e:
-            logger.error(f"[create_product error]: {e}")
-            raise HTTPException(status_code=500, detail="Error creating product")
+        is_admin = await self.user_service.is_admin(gmail)
+        if is_admin:
+            await self.psql_repo.create_product(product)
+            return {"status": "ok", "message": "Product created successfully"}
 
     async def get_products_by_id(self, prod_id: int):
-        try:
-            product = await self.psql_repo.get_products_by_id(prod_id)
-            return {"status": "ok", "product": product}
-        except Exception as e:
-            logger.error(f"[get_products_by_id error]: {e}")
-            return {"status": "error", "message": "Error fetching product"}
+        product = await self.psql_repo.get_products_by_id(prod_id)
+        return {"status": "ok", "product": product}
 
     async def get_all_products(self):
-        try:
-            products = await self.psql_repo.get_all_products()
-            return {"status": "ok", "products": products}
-        except Exception as e:
-            logger.error(f"[get_all_products error]: {e}")
-            return {"status": "error", "message": "Error fetching products"}
-
+        products = await self.psql_repo.get_all_products()
+        return {"status": "ok", "products": products}
 
     async def patch_product(self, product_id: int, product_update: model.ProductUpdate, gmail: str):
-        try:
-            is_admin = await self.user_service.is_admin(gmail)
-            if is_admin:
-                await self.psql_repo.patch_product(product_id, product_update)
-                return {"status": "ok", "message": "Product updated successfully"}
-        except Exception as e:
-            logger.error(f"[patch_product error]: {e}")
-            raise HTTPException(status_code=500, detail="Error updating product")
+        is_admin = await self.user_service.is_admin(gmail)
+        if is_admin:
+            await self.psql_repo.patch_product(product_id, product_update)
+            return {"status": "ok", "message": "Product updated successfully"}
 
     async def delete_product(self, product_id: int, gmail: str):
-        try:
-            is_admin = await self.user_service.is_admin(gmail)
-            if is_admin:
-                await self.psql_repo.delete_product(product_id)
-                return {"status": "ok", "message": "Product deleted successfully"}
-        except Exception as e:
-            logger.error(f"[delete_product error]: {e}")
-            raise HTTPException(status_code=500, detail="Error deleting product")
+        is_admin = await self.user_service.is_admin(gmail)
+        if is_admin:
+            await self.psql_repo.delete_product(product_id)
+            return {"status": "ok", "message": "Product deleted successfully"}

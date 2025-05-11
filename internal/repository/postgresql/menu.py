@@ -55,6 +55,7 @@ class MenuRepository:
                 result = await conn.execute("DELETE FROM product WHERE productid = $1", product_id)
                 if result == 'DELETE 0':
                     logger.error(f"[delete_product error]: No product found with productid {product_id}")
+                    raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
         except Exception as e:
             logger.error(f"[delete_product error]: {e}")
 
@@ -84,7 +85,10 @@ class MenuRepository:
             if updates:
                 query = f"UPDATE product SET {', '.join(updates)} WHERE productid = ${len(params)}"
                 async with self.pool.acquire() as conn:
-                    await conn.execute(query, *params)
+                    result = await conn.execute(query, *params)
+                    if result == "UPDATE 0":
+                        raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
+
         except Exception as e:
             logger.error(f"[patch_product error]: {e}")
-
+            raise
