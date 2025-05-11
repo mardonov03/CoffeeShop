@@ -13,6 +13,7 @@ class MenuRepository:
                 await conn.execute("INSERT INTO product (name, info, price, volume_ml, categoryid) VALUES ($1, $2, $3, $4, $5)", product.name, product.info, product.price, product.volume_ml, product.categoryid)
         except Exception as e:
             logger.error(f"[create_product error]: {e}")
+            raise HTTPException(status_code=500, detail="Failed to create product.")
 
     async def get_all_products(self) -> list[model.ProductInfo]:
         try:
@@ -22,7 +23,7 @@ class MenuRepository:
                     return [model.ProductInfo(**dict(r)) for r in products]
         except Exception as e:
             logger.error(f"[get_all_products error]: {e}")
-            return []
+            raise HTTPException(status_code=500, detail="Failed to fetch products.")
 
     async def get_products_by_id(self, prod_id: int) -> model.ProductInfo:
         try:
@@ -30,18 +31,11 @@ class MenuRepository:
                 product = await conn.fetchrow("SELECT p.productid, p.name,p.info, p.price, p.volume_ml, p.categoryid, c.categoryname FROM product p LEFT JOIN category c ON p.categoryid = c.categoryid WHERE productid = $1", prod_id)
                 if product:
                     return model.ProductInfo(**dict(product))
+                else:
+                    raise HTTPException(status_code=404, detail=f"Product with id {prod_id} not found.")
         except Exception as e:
             logger.error(f"[get_products_by_id error]: {e}")
-
-    async def delete_product(self, product_id: int):
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.execute("DELETE FROM product WHERE productid = $1", product_id)
-                if result == 'DELETE 0':
-                    logger.error(f"[delete_product error]: No product found with productid {product_id}")
-                    raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
-        except Exception as e:
-            logger.error(f"[delete_product error]: {e}")
+            raise
 
     async def patch_product(self, product_id: int, product_update: model.ProductUpdate):
         try:
@@ -77,12 +71,25 @@ class MenuRepository:
             logger.error(f"[patch_product error]: {e}")
             raise
 
+    async def delete_product(self, product_id: int):
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.execute("DELETE FROM product WHERE productid = $1", product_id)
+                if result == 'DELETE 0':
+                    logger.error(f"[delete_product error]: No product found with productid {product_id}")
+                    raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
+        except Exception as e:
+            logger.error(f"[delete_product error]: {e}")
+            raise
+
+
     async def create_category(self, category: model.CategoryCreate):
         try:
             async with self.pool.acquire() as conn:
                 await conn.execute("INSERT INTO category (categoryname) VALUES ($1)", category.categoryname)
         except Exception as e:
             logger.error(f"[create_category error]: {e}")
+            raise HTTPException(status_code=500, detail="Failed to create category.")
 
     async def get_all_categories(self) -> List[model.CategoryInfo]:
         try:
@@ -91,4 +98,38 @@ class MenuRepository:
                 return [model.CategoryInfo(**dict(r)) for r in records]
         except Exception as e:
             logger.error(f"[get_all_categories error]: {e}")
-            return []
+            raise HTTPException(status_code=500, detail="Failed to fetch categories.")
+
+    async def get_category_by_id(self, categoryid: int) -> model.CategoryInfo:
+        try:
+            async with self.pool.acquire() as conn:
+                category = await conn.fetchrow("SELECT * FROM category WHERE categoryid = $1", categoryid)
+                if category:
+                    return model.CategoryInfo(**dict(category))
+                else:
+                    raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found.")
+        except Exception as e:
+            logger.error(f"[get_category_by_id error]: {e}")
+            raise
+
+    async def patch_category(self, categoryid: int, category_update: model.CategoryUpdate):
+        try:
+            if category_update.categoryname:
+                async with self.pool.acquire() as conn:
+                    result = await conn.execute("UPDATE category SET categoryname = $1 WHERE categoryid = $2", category_update.categoryname, categoryid)
+                    if result == "UPDATE 0":
+                        raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found")
+        except Exception as e:
+            logger.error(f"[patch_category error]: {e}")
+            raise
+
+    async def delete_category(self, categoryid: int):
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.execute("DELETE FROM category WHERE categoryid = $1", categoryid)
+                if result == 'DELETE 0':
+                    logger.error(f"[delete_category error]: No category found with categoryid {categoryid}")
+                    raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found")
+        except Exception as e:
+            logger.error(f"[delete_category error]: {e}")
+            raise

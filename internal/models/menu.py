@@ -30,5 +30,5 @@ class CategoryUpdate(BaseModel):
     categoryname: str | None = None
 
 class CategoryInfo(BaseModel):
-    id: conint(ge=1)
+    categoryid: conint(ge=1)
     categoryname: str

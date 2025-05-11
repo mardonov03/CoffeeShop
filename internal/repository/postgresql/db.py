@@ -72,7 +72,7 @@ async def init_db(pool):
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS basket (
                     basketid BIGSERIAL PRIMARY KEY,
-                    userid BIGINT UNIQUE REFERENCES users(userid),
+                    userid BIGINT UNIQUE REFERENCES users(userid) ON DELETE CASCADE,
                     added_time TIMESTAMP NOT NULL DEFAULT now()
                 );
             """)
@@ -89,7 +89,8 @@ async def init_db(pool):
                     info TEXT,
                     price BIGINT,
                     volume_ml FLOAT,
-                    categoryid BIGINT REFERENCES category(categoryid)
+                    categoryid BIGINT REFERENCES category(categoryid) ON DELETE CASCADE,
+                    UNIQUE (name, volume_ml)
                 );
             """)
     except Exception as e:
