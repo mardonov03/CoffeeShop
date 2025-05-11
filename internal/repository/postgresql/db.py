@@ -63,7 +63,7 @@ async def init_db(pool):
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS orders (
                     orderid BIGSERIAL PRIMARY KEY,
-                    userid BIGINT REFERENCES users(userid),
+                    userid BIGINT REFERENCES users(userid) ON DELETE CASCADE,
                     status order_status DEFAULT 'created',
                     added_time TIMESTAMP NOT NULL DEFAULT now(),
                     updated_time TIMESTAMP
