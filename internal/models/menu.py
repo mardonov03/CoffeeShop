@@ -1,18 +1,11 @@
 from pydantic import BaseModel, constr, conint
 
-class CategoryCreate(BaseModel):
-    name: constr(min_length=1)
-
 class ProductCreate(BaseModel):
     name: constr(min_length=1)
     info: str | None = None
     price: conint(ge=0)
     volume_ml: conint(ge=0)
     categoryid: conint(ge=1) = None
-
-class CategoryInfo(BaseModel):
-    id: conint(ge=1)
-    name: str
 
 class ProductInfo(BaseModel):
     productid: int
@@ -30,5 +23,12 @@ class ProductUpdate(BaseModel):
     volume_ml: float | None = None
     categoryid: int | None = None
 
+class CategoryCreate(BaseModel):
+    categoryname: constr(min_length=1)
+
 class CategoryUpdate(BaseModel):
-    name: str | None = None
+    categoryname: str | None = None
+
+class CategoryInfo(BaseModel):
+    id: conint(ge=1)
+    categoryname: str

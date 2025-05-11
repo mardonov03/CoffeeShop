@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from internal.repository.postgresql import db
 from internal.core.logging import logger
-from internal.api import user, auth, products
+from internal.api import user, auth, products, categories
 from internal.repository.redis import db as redis_db
 
 app = FastAPI()
 
 app.include_router(user.router, prefix="/users", tags=["Users"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(categories.router, prefix="/categories", tags=["Category"])
 app.include_router(products.router, prefix="/products", tags=["Product"])
 
 @app.on_event('startup')

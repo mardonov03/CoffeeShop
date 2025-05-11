@@ -7,37 +7,12 @@ class MenuRepository:
     def __init__(self, pool):
         self.pool = pool
 
-    async def create_category(self, category: model.CategoryCreate):
-        try:
-            async with self.pool.acquire() as conn:
-                await conn.execute("INSERT INTO category (name) VALUES ($1)", category.name)
-        except Exception as e:
-            logger.error(f"[create_category error]: {e}")
-
-    async def get_all_categories(self) -> List[model.CategoryInfo]:
-        try:
-            async with self.pool.acquire() as conn:
-                records = await conn.fetch("SELECT * FROM category")
-                return [model.CategoryInfo(**dict(r)) for r in records]
-        except Exception as e:
-            logger.error(f"[get_all_categories error]: {e}")
-            return []
-
     async def create_product(self, product: model.ProductCreate):
         try:
             async with self.pool.acquire() as conn:
                 await conn.execute("INSERT INTO product (name, info, price, volume_ml, categoryid) VALUES ($1, $2, $3, $4, $5)", product.name, product.info, product.price, product.volume_ml, product.categoryid)
         except Exception as e:
             logger.error(f"[create_product error]: {e}")
-
-    async def get_products_by_id(self, prod_id: int) -> model.ProductInfo:
-        try:
-            async with self.pool.acquire() as conn:
-                product = await conn.fetchrow("SELECT p.productid, p.name,p.info, p.price, p.volume_ml, p.categoryid, c.categoryname FROM product p LEFT JOIN category c ON p.categoryid = c.categoryid WHERE productid = $1", prod_id)
-                if product:
-                    return model.ProductInfo(**dict(product))
-        except Exception as e:
-            logger.error(f"[get_products_by_id error]: {e}")
 
     async def get_all_products(self) -> list[model.ProductInfo]:
         try:
@@ -48,6 +23,15 @@ class MenuRepository:
         except Exception as e:
             logger.error(f"[get_all_products error]: {e}")
             return []
+
+    async def get_products_by_id(self, prod_id: int) -> model.ProductInfo:
+        try:
+            async with self.pool.acquire() as conn:
+                product = await conn.fetchrow("SELECT p.productid, p.name,p.info, p.price, p.volume_ml, p.categoryid, c.categoryname FROM product p LEFT JOIN category c ON p.categoryid = c.categoryid WHERE productid = $1", prod_id)
+                if product:
+                    return model.ProductInfo(**dict(product))
+        except Exception as e:
+            logger.error(f"[get_products_by_id error]: {e}")
 
     async def delete_product(self, product_id: int):
         try:
@@ -92,3 +76,19 @@ class MenuRepository:
         except Exception as e:
             logger.error(f"[patch_product error]: {e}")
             raise
+
+    async def create_category(self, category: model.CategoryCreate):
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.execute("INSERT INTO category (categoryname) VALUES ($1)", category.categoryname)
+        except Exception as e:
+            logger.error(f"[create_category error]: {e}")
+
+    async def get_all_categories(self) -> List[model.CategoryInfo]:
+        try:
+            async with self.pool.acquire() as conn:
+                records = await conn.fetch("SELECT * FROM category")
+                return [model.CategoryInfo(**dict(r)) for r in records]
+        except Exception as e:
+            logger.error(f"[get_all_categories error]: {e}")
+            return []
