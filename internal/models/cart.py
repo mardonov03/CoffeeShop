@@ -8,14 +8,19 @@ class GetCart(BaseModel):
     added_time: datetime.timedelta
     products: list[menu.ProductInfo] | None = None
 
-class AddProduct:
-    pass
+class AddProduct(BaseModel):
+    productid: int
+    cartid: int
+    quantity: conint(gt=0)
 
-class EditCart:
-    pass
+class EditCart(BaseModel):
+    productid: int
+    cartid: int
+    quantity: conint(gt=0)
 
-class DeleteProduct:
-    pass
+class DeleteProduct(BaseModel):
+    productid: int
+    cartid: int
 
-class Clear:
-    pass
+class Clear(BaseModel):
+    cartid: int

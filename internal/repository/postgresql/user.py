@@ -138,3 +138,12 @@ class UserRepository:
                 await conn.execute('UPDATE user_tokens ut SET refresh_token = $1, expires_at = $2 FROM users u WHERE u.gmail = $3 AND ut.userid = u.userid',token, datetime.datetime.now(), gmail)
         except Exception as e:
             logger.error(f'[add_refresh_token error]: {e}')
+
+    async def is_cart_belongs(self, gmail: str, cartid: int) -> bool:
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchval("SELECT 1 FROM cart JOIN users ON cart.userid = users.userid WHERE cart.cartid = $1 AND users.gmail = $2", cartid, gmail)
+                return bool(result)
+        except Exception as e:
+            logger.error(f'[is_cart_belongs error]: {e}')
+            return False

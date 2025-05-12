@@ -196,3 +196,6 @@ class UserService:
         except Exception as e:
             logger.error(f'[refresh_access_token error]: {e}')
             raise HTTPException(status_code=500, detail="Internal Server Error. Please try again later.")
+
+    async def is_cart_belongs(self, gmail: str, cartid: int):
+        return await self.psql_repo.is_cart_belongs(gmail, cartid)
