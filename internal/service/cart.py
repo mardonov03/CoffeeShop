@@ -36,7 +36,7 @@ class CartService:
             raise HTTPException(status_code=403, detail="You do not have permission")
         return await self.repo.delete_product(model)
 
-    async def delete_all_products(self, model: cart.EditCart, gmail: str):
+    async def delete_all_products(self, model: cart.Clear, gmail: str):
         result = await self.user_service.is_cart_belongs(gmail, model.cartid)
 
         if not result:
