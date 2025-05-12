@@ -12,7 +12,7 @@ class CartRepository:
                 cart_row = await conn.fetchrow("SELECT * FROM cart WHERE cartid = $1", cartid)
                 cart_products = await conn.fetch("SELECT p.productid, p.name, p.info, p.price, p.volume_ml, cp.quantity FROM cart_products cp JOIN product p ON cp.productid = p.productid WHERE cp.cartid = $1", cartid)
 
-                products = [menu.ProductInfo(**dict(row)) for row in cart_products]
+                products = [cart.CartProductInfo(product=menu.ProductInfo(productid=row["productid"], name=row["name"], info=row["info"], price=row["price"], volume_ml=row["volume_ml"]), quantity=row["quantity"])for row in cart_products]
 
                 return cart.GetCart(cartid=cart_row['cartid'], userid=cart_row['userid'], added_time=cart_row['added_time'], products=products)
         except Exception as e:

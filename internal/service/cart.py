@@ -25,6 +25,7 @@ class CartService:
             raise HTTPException(status_code=403, detail="You do not have permission")
         try:
             await self.repo.add_product(model)
+            return {"status": 'ok'}
         except Exception:
             raise HTTPException(status_code=500, detail="Error adding product")
 
@@ -35,6 +36,7 @@ class CartService:
             raise HTTPException(status_code=403, detail="You do not have permission")
         try:
             await self.repo.edit_product(model)
+            return {"status": 'ok'}
         except Exception:
             raise HTTPException(status_code=500, detail="Error while editing product")
 
@@ -45,6 +47,7 @@ class CartService:
             raise HTTPException(status_code=403, detail="You do not have permission")
         try:
             await self.repo.delete_product(model)
+            return {"status": 'ok'}
         except Exception:
             raise HTTPException(status_code=500, detail="Error removing product")
 
@@ -55,5 +58,6 @@ class CartService:
             raise HTTPException(status_code=403, detail="You do not have permission")
         try:
             await self.repo.delete_all_products(model)
+            return {"status": 'ok'}
         except Exception:
             raise HTTPException(status_code=500, detail="Error emptying recycle bin")

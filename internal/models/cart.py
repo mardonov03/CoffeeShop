@@ -1,12 +1,16 @@
 from pydantic import BaseModel, constr, conint
 from internal.models import menu
-
 import datetime
+
+class CartProductInfo(BaseModel):
+    product: menu.ProductInfo
+    quantity: int
+
 class GetCart(BaseModel):
     cartid: int
     userid: int
-    added_time: datetime.timedelta
-    products: list[menu.ProductInfo] | None = None
+    added_time: datetime.datetime
+    products: list[CartProductInfo] | None = None
 
 class AddProduct(BaseModel):
     productid: int

@@ -2,7 +2,8 @@
     1.1. запустите Docker вручную 
     1.2 зайдиту в папку с docker-compose.yml 
     1.3 запустите docker-compose.yml: docker-compose up --build (на сервере желательно с sudo)
-
+    
+    1.4 docker-compose logs -f web # логи
 
 пример .env фала:
     DB_USER=postgres
@@ -23,7 +24,7 @@
     MAIL_STARTTLS=True
     MAIL_SSL_TLS=False
     USE_CREDENTIALS=True
-    DNS_URL=http://localhost:8081 # это для отправки правильного url при верификации
+    DNS_URL=http://localhost:8082 # это для отправки правильного url при верификации
     JWT_ACCESS_EXPIRE_MINUTES=30
     JWT_REFRESH_EXPIRE_DAYS=7
 
