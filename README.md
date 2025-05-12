@@ -23,7 +23,7 @@
     MAIL_STARTTLS=True
     MAIL_SSL_TLS=False
     USE_CREDENTIALS=True
-    DNS_URL=http://localhost:8081
+    DNS_URL=http://localhost:8081 # это для отправки правильного url при верификации
     JWT_ACCESS_EXPIRE_MINUTES=30
     JWT_REFRESH_EXPIRE_DAYS=7
 
