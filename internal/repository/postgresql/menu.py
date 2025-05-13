@@ -13,7 +13,7 @@ class MenuRepository:
                 await conn.execute("INSERT INTO product (name, info, price, volume_ml, categoryid) VALUES ($1, $2, $3, $4, $5)", product.name, product.info, product.price, product.volume_ml, product.categoryid)
         except Exception as e:
             logger.error(f"[create_product error]: {e}")
-            raise HTTPException(status_code=500, detail="Failed to create product.")
+            raise
 
     async def get_all_products(self) -> list[model.ProductInfo]:
         try:
@@ -23,7 +23,7 @@ class MenuRepository:
                     return [model.ProductInfo(**dict(r)) for r in products]
         except Exception as e:
             logger.error(f"[get_all_products error]: {e}")
-            raise HTTPException(status_code=500, detail="Failed to fetch products.")
+            raise
 
     async def get_products_by_id(self, prod_id: int) -> model.ProductInfo:
         try:
@@ -32,7 +32,7 @@ class MenuRepository:
                 if product:
                     return model.ProductInfo(**dict(product))
                 else:
-                    raise HTTPException(status_code=404, detail=f"Product with id {prod_id} not found.")
+                    raise ValueError(f"Product with id {prod_id} not found.")
         except Exception as e:
             logger.error(f"[get_products_by_id error]: {e}")
             raise
@@ -65,7 +65,7 @@ class MenuRepository:
                 async with self.pool.acquire() as conn:
                     result = await conn.execute(query, *params)
                     if result == "UPDATE 0":
-                        raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
+                        raise ValueError(f"Product with id {product_id} not found")
 
         except Exception as e:
             logger.error(f"[patch_product error]: {e}")
@@ -77,7 +77,7 @@ class MenuRepository:
                 result = await conn.execute("DELETE FROM product WHERE productid = $1", product_id)
                 if result == 'DELETE 0':
                     logger.error(f"[delete_product error]: No product found with productid {product_id}")
-                    raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
+                    raise ValueError(f"Product with id {product_id} not found")
         except Exception as e:
             logger.error(f"[delete_product error]: {e}")
             raise
@@ -89,7 +89,7 @@ class MenuRepository:
                 await conn.execute("INSERT INTO category (categoryname) VALUES ($1)", category.categoryname)
         except Exception as e:
             logger.error(f"[create_category error]: {e}")
-            raise HTTPException(status_code=500, detail="Failed to create category.")
+            raise
 
     async def get_all_categories(self) -> List[model.CategoryInfo]:
         try:
@@ -98,7 +98,7 @@ class MenuRepository:
                 return [model.CategoryInfo(**dict(r)) for r in records]
         except Exception as e:
             logger.error(f"[get_all_categories error]: {e}")
-            raise HTTPException(status_code=500, detail="Failed to fetch categories.")
+            raise
 
     async def get_category_by_id(self, categoryid: int) -> model.CategoryInfo:
         try:
@@ -107,7 +107,7 @@ class MenuRepository:
                 if category:
                     return model.CategoryInfo(**dict(category))
                 else:
-                    raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found.")
+                    raise ValueError(f"Category with id {categoryid} not found.")
         except Exception as e:
             logger.error(f"[get_category_by_id error]: {e}")
             raise
@@ -118,7 +118,7 @@ class MenuRepository:
                 async with self.pool.acquire() as conn:
                     result = await conn.execute("UPDATE category SET categoryname = $1 WHERE categoryid = $2", category_update.categoryname, categoryid)
                     if result == "UPDATE 0":
-                        raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found")
+                        raise ValueError(f"Category with id {categoryid} not found")
         except Exception as e:
             logger.error(f"[patch_category error]: {e}")
             raise
@@ -129,7 +129,7 @@ class MenuRepository:
                 result = await conn.execute("DELETE FROM category WHERE categoryid = $1", categoryid)
                 if result == 'DELETE 0':
                     logger.error(f"[delete_category error]: No category found with categoryid {categoryid}")
-                    raise HTTPException(status_code=404, detail=f"Category with id {categoryid} not found")
+                    raise ValueError(f"Category with id {categoryid} not found")
         except Exception as e:
             logger.error(f"[delete_category error]: {e}")
             raise
